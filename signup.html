@@ -29,7 +29,8 @@
                     }
                 } catch (error) {
                     console.error('Error checking authentication status:', error);
-                    showMessage('Failed to check authentication status. Please refresh the page.', 'error');
+                    // Don't redirect or block the signup page on auth check error
+                    // Just log the error and let the user try to sign up
                 }
                 
                 // Set up signup form submission

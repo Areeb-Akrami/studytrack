@@ -37,7 +37,7 @@ async function getCurrentUser() {
         return data.user;
     } catch (error) {
         console.error('Error getting current user:', error);
-        return null;
+        throw error; // Rethrow the error so callers can handle it
     }
 }
 

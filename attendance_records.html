@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Attendance Records</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f4f4f4;
+            color: #333;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        nav {
+            margin-bottom: 20px;
+        }
+        nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #6a11cb;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #6a11cb;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            margin: 0 10px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background: #6a11cb;
+            color: white;
+        }
+        .actions button {
+            margin-left: 5px;
+            background: #2575fc;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .actions button:hover {
+            background: #005bea;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Your Attendance Records</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="manage_subjects.html">Manage Subjects</a>
+            <a href="mark_attendance.html">Mark Attendance</a>
+        </nav>
+    </header>
+    <main>
+        <div class="form-group">
+            <label for="month">Month:</label>
+            <select id="month">
+                <option value="all">All Months</option>
+                <!-- Add month options dynamically -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="subject">Subject:</label>
+            <select id="subject">
+                <option value="all">All Subjects</option>
+                <!-- Add subject options dynamically -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status">
+                <option value="all">All Status</option>
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="late">Late</option>
+            </select>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Present</h3>
+                <p id="present-count">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Absent</h3>
+                <p id="absent-count">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Late</h3>
+                <p id="late-count">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Attendance Rate</h3>
+                <p id="attendance-rate">0%</p>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="attendance-list">
+                <!-- Attendance records will be displayed here -->
+            </tbody>
+        </table>
+
+        <h2>Monthly Attendance Overview</h2>
+        <div id="monthly-overview">
+            <!-- Monthly overview will be displayed here -->
+        </div>
+    </main>
+    <script src="js/attendance_records.js"></script>
+</body>
+</html> 

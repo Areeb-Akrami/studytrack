@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #4834d4;
+            color: white;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            opacity: 1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .attendance-form {
+            background: rgba(20, 20, 50, 0.5);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        select, input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        /* Fix for dropdown text visibility */
+        select option {
+            background-color: #2d1faf;
+            color: white;
+        }
+
+        /* Custom dropdown styling */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-selected {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .select-selected:after {
+            position: absolute;
+            content: "";
+            top: 50%;
+            right: 15px;
+            width: 10px;
+            height: 10px;
+            border-bottom: 2px solid white;
+            border-right: 2px solid white;
+            transform: translateY(-50%) rotate(45deg);
+        }
+
+        .select-items {
+            position: absolute;
+            background-color: #2d1faf;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 99;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .select-items div {
+            color: white;
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .select-items div:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .select-hide {
+            display: none;
+        }
+
+        .same-as-selected {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5b52ff;
+            transform: translateY(-2px);
+        }
+
+        .attendance-records {
+            background: rgba(20, 20, 50, 0.5);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .record-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .record-actions button {
+            width: auto;
+            padding: 8px 16px;
+        }
+
+        .record-actions button.edit {
+            background: #6c63ff;
+        }
+
+        .record-actions button.delete {
+            background: #ff3b30;
+        }
+
+        .status-present {
+            color: #4CAF50;
+        }
+
+        .status-absent {
+            color: #ff3b30;
+        }
+
+        .status-late {
+            color: #ff9500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">StudentTracker</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="manage_subjects.html">Subjects</a>
+            <a href="mark_attendance.html" class="active">Attendance</a>
+            <a href="view_schedule.html">Schedule</a>
+            <a href="#" id="logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Mark Attendance</h1>
+
+        <div class="attendance-form fade-in">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <div class="custom-select">
+                        <div class="select-selected">Select Subject</div>
+                        <div class="select-items select-hide" id="subject-items">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <input type="hidden" id="subject" value="">
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <div class="custom-select">
+                        <div class="select-selected">Present</div>
+                        <div class="select-items select-hide">
+                            <div data-value="present">Present</div>
+                            <div data-value="absent">Absent</div>
+                            <div data-value="late">Late</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="status" value="present">
+                </div>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" required>
+                </div>
+            </div>
+            <button id="mark-attendance-btn">Mark Attendance</button>
+        </div>
+
+        <div class="attendance-records fade-in">
+            <h2>Recent Attendance Records</h2>
+            <div id="attendance-list">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get current user from localStorage
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+
+        // Load data from localStorage
+        let subjects = JSON.parse(localStorage.getItem('subjects_' + currentUser.id)) || [];
+        let attendanceData = JSON.parse(localStorage.getItem('attendance_' + currentUser.id)) || [];
+
+        // Initialize date input with today's date
+        document.getElementById('date').valueAsDate = new Date();
+
+        // Custom dropdown functionality
+        function setupCustomDropdowns() {
+            const customSelects = document.querySelectorAll('.custom-select');
+            
+            customSelects.forEach(select => {
+                const selectedDiv = select.querySelector('.select-selected');
+                const itemsDiv = select.querySelector('.select-items');
+                const hiddenInput = select.parentNode.querySelector('input[type="hidden"]');
+                
+                // Click on selected element
+                selectedDiv.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeAllSelect(this);
+                    itemsDiv.classList.toggle('select-hide');
+                    this.classList.toggle('select-arrow-active');
+                });
+                
+                // Click on an option
+                if (itemsDiv) {
+                    const items = itemsDiv.querySelectorAll('div');
+                    items.forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            selectedDiv.textContent = this.textContent;
+                            hiddenInput.value = this.getAttribute('data-value') || this.textContent;
+                            itemsDiv.classList.add('select-hide');
+                        });
+                    });
+                }
+            });
+            
+            // Close dropdowns when clicking elsewhere
+            document.addEventListener('click', closeAllSelect);
+        }
+        
+        function closeAllSelect(elmnt) {
+            const items = document.querySelectorAll('.select-items');
+            const selected = document.querySelectorAll('.select-selected');
+            
+            for (let i = 0; i < selected.length; i++) {
+                if (elmnt != selected[i]) {
+                    selected[i].classList.remove('select-arrow-active');
+                }
+            }
+            
+            for (let i = 0; i < items.length; i++) {
+                if (elmnt != items[i] && elmnt != selected[i]) {
+                    items[i].classList.add('select-hide');
+                }
+            }
+        }
+
+        // Populate subject dropdown
+        function populateSubjects() {
+            const subjectItems = document.getElementById('subject-items');
+            subjectItems.innerHTML = '';
+            
+            subjects.forEach(subject => {
+                const item = document.createElement('div');
+                item.textContent = subject.name;
+                item.setAttribute('data-value', subject.name);
+                subjectItems.appendChild(item);
+            });
+            
+            // Setup event listeners for the newly added items
+            const items = subjectItems.querySelectorAll('div');
+            const selectedDiv = document.querySelector('.form-group:first-child .select-selected');
+            const hiddenInput = document.getElementById('subject');
+            
+            items.forEach(item => {
+                item.addEventListener('click', function() {
+                    selectedDiv.textContent = this.textContent;
+                    hiddenInput.value = this.getAttribute('data-value');
+                    subjectItems.classList.add('select-hide');
+                });
+            });
+        }
+
+        // Display attendance records
+        function displayAttendance() {
+            const attendanceList = document.getElementById('attendance-list');
+            attendanceList.innerHTML = '';
+
+            if (attendanceData.length === 0) {
+                attendanceList.innerHTML = `
+                    <div class="empty-state">
+                        <p>No attendance records yet.</p>
+                        <p>Mark your first attendance using the form above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by date (newest first)
+            const sortedData = [...attendanceData].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Display only the 5 most recent records
+            const recentData = sortedData.slice(0, 5);
+            
+            recentData.forEach((record, index) => {
+                const date = new Date(record.date).toLocaleDateString('en-GB'); // Format as DD/MM/YYYY
+                
+                const recordItem = document.createElement('div');
+                recordItem.className = 'record-item';
+                recordItem.innerHTML = `
+                    <div class="record-info">
+                        ${record.subject} - ${date} - ${record.status}
+                    </div>
+                    <div class="record-actions">
+                        <button class="edit" onclick="editRecord(${sortedData.indexOf(record)})">Edit</button>
+                        <button class="delete" onclick="deleteRecord(${sortedData.indexOf(record)})">Delete</button>
+                    </div>
+                `;
+                attendanceList.appendChild(recordItem);
+            });
+        }
+
+        // Mark attendance
+        document.getElementById('mark-attendance-btn').addEventListener('click', function() {
+            const subject = document.getElementById('subject').value;
+            const status = document.getElementById('status').value;
+            const date = document.getElementById('date').value;
+
+            if (!subject || !date) {
+                alert('Please select a subject and date');
+                return;
+            }
+
+            // Create new attendance record
+            const record = {
+                id: Date.now().toString(),
+                subject,
+                status,
+                date: new Date(date).toISOString(),
+                userId: currentUser.id
+            };
+
+            // Add to array
+            attendanceData.push(record);
+            
+            // Save to localStorage
+            localStorage.setItem('attendance_' + currentUser.id, JSON.stringify(attendanceData));
+            
+            // Update display
+            displayAttendance();
+            
+            // Show success animation
+            this.textContent = 'Marked!';
+            this.style.backgroundColor = '#4CAF50';
+            setTimeout(() => {
+                this.textContent = 'Mark Attendance';
+                this.style.backgroundColor = '#6c63ff';
+            }, 2000);
+        });
+
+        // Edit attendance record
+        function editRecord(index) {
+            const record = attendanceData[index];
+            
+            // Update the custom dropdowns
+            const subjectSelected = document.querySelector('.form-group:first-child .select-selected');
+            const statusSelected = document.querySelector('.form-group:nth-child(2) .select-selected');
+            
+            subjectSelected.textContent = record.subject;
+            statusSelected.textContent = record.status.charAt(0).toUpperCase() + record.status.slice(1);
+            
+            document.getElementById('subject').value = record.subject;
+            document.getElementById('status').value = record.status;
+            document.getElementById('date').value = new Date(record.date).toISOString().split('T')[0];
+            
+            // Remove the record (will be re-added when form is submitted)
+            attendanceData.splice(index, 1);
+            localStorage.setItem('attendance_' + currentUser.id, JSON.stringify(attendanceData));
+            displayAttendance();
+        }
+
+        // Delete attendance record
+        function deleteRecord(index) {
+            if (confirm('Are you sure you want to delete this attendance record?')) {
+                attendanceData.splice(index, 1);
+                localStorage.setItem('attendance_' + currentUser.id, JSON.stringify(attendanceData));
+                displayAttendance();
+            }
+        }
+
+        // Logout
+        document.getElementById('logout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        });
+
+        // Initialize
+        populateSubjects();
+        setupCustomDropdowns();
+        displayAttendance();
+    </script>
+</body>
+</html> 

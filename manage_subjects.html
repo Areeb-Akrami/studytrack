@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Subjects</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #2d1faf;
+            color: white;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            opacity: 1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .links a {
+            color: #b19fff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .links a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #6c63ff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        button {
+            background: #6c63ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5b52ff;
+            transform: translateY(-2px);
+        }
+
+        .subject-list {
+            margin-top: 40px;
+        }
+
+        .subject-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .subject-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .subject-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .subject-details {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .subject-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .subject-actions button {
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-btn {
+            background: rgba(108, 99, 255, 0.5);
+        }
+
+        .edit-btn:hover {
+            background: rgba(108, 99, 255, 0.7);
+        }
+
+        .delete-btn {
+            background: rgba(255, 59, 48, 0.5);
+        }
+
+        .delete-btn:hover {
+            background: rgba(255, 59, 48, 0.7);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">StudentTracker</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="manage_subjects.html" class="active">Subjects</a>
+            <a href="mark_attendance.html">Attendance</a>
+            <a href="view_schedule.html">Schedule</a>
+            <a href="#" id="logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Manage Subjects</h1>
+        
+        <div class="links">
+            <a href="index.html">Home</a>
+            <a href="mark_attendance.html">Mark Attendance</a>
+            <a href="view_schedule.html">View Schedule</a>
+        </div>
+
+        <div class="form-container">
+            <div class="form-group">
+                <label for="subject-name">Subject Name</label>
+                <input type="text" id="subject-name" placeholder="Enter subject name">
+            </div>
+            
+            <div class="form-group">
+                <label for="subject-code">Subject Code</label>
+                <input type="text" id="subject-code" placeholder="Enter subject code">
+            </div>
+            
+            <div class="form-group">
+                <label for="total-classes">Total Classes (per week)</label>
+                <input type="number" id="total-classes" min="1" value="1">
+            </div>
+            
+            <button id="add-subject-btn">Add Subject</button>
+        </div>
+
+        <div class="subject-list" id="subject-list">
+            <!-- Subject items will be added here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Get current user from localStorage
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+
+        // Load subjects from localStorage
+        let subjects = JSON.parse(localStorage.getItem('subjects_' + currentUser.id)) || [];
+
+        // Display subjects
+        function displaySubjects() {
+            const subjectList = document.getElementById('subject-list');
+            subjectList.innerHTML = '';
+
+            if (subjects.length === 0) {
+                subjectList.innerHTML = `
+                    <div class="empty-state">
+                        <p>No subjects added yet.</p>
+                        <p>Add your first subject using the form above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            subjects.forEach((subject, index) => {
+                const subjectItem = document.createElement('div');
+                subjectItem.className = 'subject-item';
+                subjectItem.innerHTML = `
+                    <div class="subject-info">
+                        <div class="subject-name">${subject.name}</div>
+                        <div class="subject-details">Code: ${subject.code} | Classes per week: ${subject.totalClasses}</div>
+                    </div>
+                    <div class="subject-actions">
+                        <button class="edit-btn" onclick="editSubject(${index})">✏️</button>
+                        <button class="delete-btn" onclick="deleteSubject(${index})">🗑️</button>
+                    </div>
+                `;
+                subjectList.appendChild(subjectItem);
+            });
+        }
+
+        // Add subject
+        document.getElementById('add-subject-btn').addEventListener('click', function() {
+            const name = document.getElementById('subject-name').value.trim();
+            const code = document.getElementById('subject-code').value.trim();
+            const totalClasses = parseInt(document.getElementById('total-classes').value);
+
+            if (!name || !code) {
+                alert('Please enter both subject name and code');
+                return;
+            }
+
+            // Add new subject
+            subjects.push({
+                id: Date.now().toString(),
+                name,
+                code,
+                totalClasses
+            });
+
+            // Save to localStorage
+            localStorage.setItem('subjects_' + currentUser.id, JSON.stringify(subjects));
+
+            // Clear form
+            document.getElementById('subject-name').value = '';
+            document.getElementById('subject-code').value = '';
+            document.getElementById('total-classes').value = '1';
+
+            // Update display
+            displaySubjects();
+        });
+
+        // Edit subject
+        function editSubject(index) {
+            const subject = subjects[index];
+            
+            document.getElementById('subject-name').value = subject.name;
+            document.getElementById('subject-code').value = subject.code;
+            document.getElementById('total-classes').value = subject.totalClasses;
+            
+            // Remove the subject (will be re-added when form is submitted)
+            subjects.splice(index, 1);
+            localStorage.setItem('subjects_' + currentUser.id, JSON.stringify(subjects));
+            displaySubjects();
+            
+            // Focus on the name field
+            document.getElementById('subject-name').focus();
+        }
+
+        // Delete subject
+        function deleteSubject(index) {
+            if (confirm('Are you sure you want to delete this subject?')) {
+                subjects.splice(index, 1);
+                localStorage.setItem('subjects_' + currentUser.id, JSON.stringify(subjects));
+                displaySubjects();
+            }
+        }
+
+        // Logout
+        document.getElementById('logout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        });
+
+        // Initialize
+        displaySubjects();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker - StudyTrack</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #7C4DFF;
+            --primary-dark: #651FFF;
+            --secondary: #00E676;
+            --danger: #FF1744;
+            --warning: #FFAB00;
+            --info: #00B0FF;
+            --success: #00C853;
+            --text-primary: #2d3436;
+            --text-secondary: #636e72;
+            --bg-light: #f8f9ff;
+            --white: #ffffff;
+            --shadow-sm: 0 2px 4px rgba(124, 77, 255, 0.1);
+            --shadow-md: 0 4px 6px rgba(124, 77, 255, 0.15);
+            --shadow-lg: 0 10px 20px rgba(124, 77, 255, 0.2);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --gradient-primary: linear-gradient(135deg, #7C4DFF, #651FFF);
+            --gradient-secondary: linear-gradient(135deg, #00E676, #00C853);
+            --gradient-danger: linear-gradient(135deg, #FF1744, #D50000);
+            --gradient-card1: linear-gradient(135deg, #FF6B6B, #FF1744);
+            --gradient-card2: linear-gradient(135deg, #00B0FF, #2979FF);
+            --gradient-card3: linear-gradient(135deg, #FFAB00, #FF6D00);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: var(--bg-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 0% 0%, rgba(124, 77, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(0, 230, 118, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(0, 176, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(255, 171, 0, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .navbar {
+            background: var(--gradient-primary);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--white);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo i {
+            transform: scale(1);
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover i {
+            transform: scale(1.2) rotate(360deg);
+            transition: transform 0.5s ease;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%) rotate(45deg);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-links a:hover::before {
+            transform: translateX(100%) rotate(45deg);
+        }
+
+        .nav-links a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-links a.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page-title {
+            font-size: clamp(2rem, 5vw, 2.5rem);
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+            position: relative;
+            display: inline-block;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientFlow 8s linear infinite;
+            background-size: 200% 200%;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(135deg, rgba(124, 77, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(45deg, rgba(0, 230, 118, 0.1) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .subject-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .subject-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+            opacity: 0.8;
+            transition: height 0.3s ease;
+        }
+
+        .subject-card:hover::before {
+            height: 100%;
+            opacity: 0.05;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .subject-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .subject-code {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(124, 77, 255, 0.1);
+            border-radius: var(--radius-sm);
+        }
+
+        .attendance-stats {
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-row:last-child {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(124, 77, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        .btn {
+            background: var(--gradient-primary);
+            color: var(--white);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn.present {
+            background: var(--gradient-secondary);
+        }
+
+        .btn.absent {
+            background: var(--gradient-danger);
+        }
+
+        .attendance-history {
+            margin-top: 1.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.5rem;
+            background: var(--bg-light);
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .history-item .date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .history-item .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .history-item .status.present {
+            background: rgba(0, 200, 83, 0.1);
+            color: var(--success);
+        }
+
+        .history-item .status.absent {
+            background: rgba(255, 23, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--white);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            min-width: 400px;
+            box-shadow: var(--shadow-lg);
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from { 
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                right: 0;
+                background: var(--gradient-primary);
+                padding: 1rem;
+                flex-direction: column;
+                gap: 10px;
+                transform: translateY(-150%);
+                transition: transform 0.3s ease;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+
+            .nav-links.active {
+                transform: translateY(0);
+            }
+
+            .menu-toggle {
+                display: block !important;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .subjects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 90%;
+                min-width: 0;
+                margin: 0 20px;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            padding: 2rem;
+        }
+
+        .loading i {
+            color: var(--primary);
+            font-size: 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(124, 77, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fas fa-graduation-cap"></i>
+            StudyTrack
+        </a>
+        <button class="menu-toggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="nav-links">
+            <a href="index.html">Dashboard</a>
+            <a href="subjects.html">Subjects</a>
+            <a href="study-planner.html">Study Planner</a>
+            <a href="attendance.html" class="active">Attendance</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="page-title">Attendance Tracker</h1>
+        <div id="message-container"></div>
+
+        <div class="card">
+            <div id="subjects-grid" class="subjects-grid">
+                <div class="loading">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    Loading subjects...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mark-attendance-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Mark Attendance</h2>
+            <div id="modal-subject-info" style="margin-bottom: 1.5rem; color: var(--text-secondary);"></div>
+            <form id="attendance-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="attendance-date">Date</label>
+                    <input type="date" id="attendance-date" required>
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn present" onclick="markAttendance(true)">
+                        <i class="fas fa-check"></i> Present
+                    </button>
+                    <button type="button" class="btn absent" onclick="markAttendance(false)">
+                        <i class="fas fa-times"></i> Absent
+                    </button>
+                    <button type="button" class="btn" onclick="closeAttendanceModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+            <div class="attendance-history" id="attendance-history">
+                <!-- Attendance history will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script>
+        let currentUser;
+        let subjects = [];
+        let currentSubject = null;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Check if user is logged in
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                currentUser = {
+                    id: user.id,
+                    email: user.email,
+                    name: user.user_metadata?.name || user.email.split('@')[0]
+                };
+
+                // Set up logout handler
+                document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+                // Set default date to today
+                document.getElementById('attendance-date').valueAsDate = new Date();
+
+                // Load subjects and attendance
+                await loadSubjectsWithAttendance();
+            } catch (error) {
+                console.error('Error initializing page:', error);
+                showMessage('Error loading attendance data. Please refresh the page.', 'error');
+            }
+        });
+
+        async function loadSubjectsWithAttendance() {
+            try {
+                // Load subjects
+                const { data: subjectsData, error: subjectsError } = await supabase
+                    .from('subjects')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (subjectsError) throw subjectsError;
+
+                subjects = subjectsData || [];
+
+                // Load attendance for all subjects
+                for (let subject of subjects) {
+                    const { data: attendanceData, error: attendanceError } = await supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('subject_id', subject.id)
+                        .eq('user_id', currentUser.id);
+
+                    if (attendanceError) throw attendanceError;
+
+                    subject.attendance = attendanceData || [];
+                    subject.attendanceStats = calculateAttendanceStats(subject.attendance);
+                }
+
+                displaySubjects();
+            } catch (error) {
+                console.error('Error loading subjects with attendance:', error);
+                const errorInfo = handleDatabaseError(error, 'loading attendance data');
+                showMessage(errorInfo.message, errorInfo.type);
+            }
+        }
+
+        function calculateAttendanceStats(attendance) {
+            const total = attendance.length;
+            const present = attendance.filter(a => a.is_present).length;
+            const percentage = total === 0 ? 0 : (present / total) * 100;
+
+            return {
+                total,
+                present,
+                absent: total - present,
+                percentage: percentage.toFixed(1)
+            };
+        }
+
+        function displaySubjects() {
+            const grid = document.getElementById('subjects-grid');
+            grid.innerHTML = '';
+
+            if (subjects.length === 0) {
+                grid.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <i class="fas fa-calendar-check fa-3x" style="color: #6c63ff; margin-bottom: 20px;"></i>
+                        <h3 style="margin-bottom: 10px;">No Subjects Found</h3>
+                        <p style="color: #888;">Add subjects in the Subjects page to start tracking attendance.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            subjects.forEach(subject => {
+                const card = document.createElement('div');
+                card.className = 'subject-card';
+                card.innerHTML = `
+                    <div class="subject-header">
+                        <div class="subject-name">${subject.name}</div>
+                        <div class="subject-code">${subject.code}</div>
+                    </div>
+                    
+                    <div class="attendance-stats">
+                        <div class="stat-row">
+                            <span>Total Classes</span>
+                            <span>${subject.attendanceStats.total}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Present</span>
+                            <span>${subject.attendanceStats.present}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Absent</span>
+                            <span>${subject.attendanceStats.absent}</span>
+                        </div>
+                        <div class="stat-row" style="color: #fff;">
+                            <span>Attendance</span>
+                            <span>${subject.attendanceStats.percentage}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${subject.attendanceStats.percentage}%"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="showAttendanceModal('${subject.id}')">
+                        <i class="fas fa-calendar-plus"></i> Mark Attendance
+                    </button>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        function showAttendanceModal(subjectId) {
+            currentSubject = subjects.find(s => s.id === subjectId);
+            if (!currentSubject) return;
+
+            document.getElementById('modal-subject-info').innerHTML = `
+                <strong>${currentSubject.name}</strong> (${currentSubject.code})
+            `;
+
+            loadAttendanceHistory();
+            document.getElementById('mark-attendance-modal').style.display = 'block';
+        }
+
+        function closeAttendanceModal() {
+            document.getElementById('mark-attendance-modal').style.display = 'none';
+            currentSubject = null;
+        }
+
+        async function loadAttendanceHistory() {
+            if (!currentSubject) return;
+
+            try {
+                const { data: attendance, error } = await supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('subject_id', currentSubject.id)
+                    .eq('user_id', currentUser.id)
+                    .order('date', { ascending: false });
+
+                if (error) throw error;
+
+                const historyContainer = document.getElementById('attendance-history');
+                historyContainer.innerHTML = '<h3 style="margin-bottom: 15px; color: #fff;">Attendance History</h3>';
+
+                if (!attendance || attendance.length === 0) {
+                    historyContainer.innerHTML += `
+                        <div style="color: #888; text-align: center; padding: 20px;">
+                            No attendance records found
+                        </div>
+                    `;
+                    return;
+                }
+
+                attendance.forEach(record => {
+                    const date = new Date(record.date).toLocaleDateString();
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <span class="date">${date}</span>
+                        <span class="status ${record.is_present ? 'present' : 'absent'}">
+                            ${record.is_present ? 'Present' : 'Absent'}
+                        </span>
+                    `;
+                    historyContainer.appendChild(historyItem);
+                });
+            } catch (error) {
+                console.error('Error loading attendance history:', error);
+                const errorInfo = handleDatabaseError(error, 'loading attendance history');
+                showMessage(errorInfo.message, errorInfo.type);
+            }
+        }
+
+        async function markAttendance(isPresent) {
+            if (!currentSubject) return;
+
+            const dateInput = document.getElementById('attendance-date');
+            const date = dateInput.value;
+
+            if (!date) {
+                showMessage('Please select a date', 'warning');
+                return;
+            }
+
+            try {
+                // Check if attendance already exists for this date
+                const { data: existing, error: checkError } = await supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('subject_id', currentSubject.id)
+                    .eq('user_id', currentUser.id)
+                    .eq('date', date)
+                    .maybeSingle();
+
+                if (checkError) throw checkError;
+
+                let result;
+                if (existing) {
+                    // Update existing attendance
+                    result = await supabase
+                        .from('attendance')
+                        .update({ is_present: isPresent })
+                        .eq('id', existing.id)
+                        .select();
+                } else {
+                    // Insert new attendance
+                    result = await supabase
+                        .from('attendance')
+                        .insert([{
+                            subject_id: currentSubject.id,
+                            user_id: currentUser.id,
+                            date: date,
+                            is_present: isPresent
+                        }])
+                        .select();
+                }
+
+                if (result.error) throw result.error;
+
+                showMessage(`Attendance marked as ${isPresent ? 'present' : 'absent'}`, 'success');
+                await loadSubjectsWithAttendance();
+                loadAttendanceHistory();
+            } catch (error) {
+                console.error('Error marking attendance:', error);
+                const errorInfo = handleDatabaseError(error, 'marking attendance');
+                showMessage(errorInfo.message, errorInfo.type);
+            }
+        }
+
+        async function handleLogout(e) {
+            e.preventDefault();
+            const button = e.target;
+            
+            try {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+                button.disabled = true;
+                
+                await supabase.auth.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error during logout:', error);
+                showMessage('Failed to log out. Please try again.', 'error');
+                button.innerHTML = 'Logout';
+                button.disabled = false;
+            }
+        }
+
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('message-container');
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}-message`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-check-circle'; break;
+                case 'error': icon = 'fa-exclamation-circle'; break;
+                case 'warning': icon = 'fa-exclamation-triangle'; break;
+                default: icon = 'fa-info-circle';
+            }
+            
+            messageElement.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(messageElement);
+            
+            setTimeout(() => {
+                messageElement.style.opacity = '0';
+                messageElement.style.transform = 'translateY(-10px)';
+                messageElement.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => messageElement.remove(), 300);
+            }, 4000);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('mark-attendance-modal');
+            if (event.target === modal) {
+                closeAttendanceModal();
+            }
+        }
+
+        // Add mobile menu toggle functionality
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.navbar')) {
+                document.querySelector('.nav-links').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

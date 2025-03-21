@@ -98,28 +98,19 @@
                 });
             }
 
-            // Add subject button
+            // Add subject button (directly submitting the form, not opening a modal)
             const addSubjectBtn = document.getElementById('add-subject-btn');
             if (addSubjectBtn) {
-                addSubjectBtn.addEventListener('click', function() {
-                    openAddSubjectModal();
-                });
+                // The button is already within the form, let the form handle the submission
+                // No need for a separate click handler
             }
-
-            // Close modal buttons
-            const closeButtons = document.querySelectorAll('.close-modal');
-            closeButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    closeAllModals();
-                });
-            });
 
             // Modal forms
             const addSubjectForm = document.getElementById('add-subject-form');
             if (addSubjectForm) {
                 addSubjectForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    saveSubject();
+                    handleAddSubject(e);
                 });
             }
 
@@ -242,16 +233,23 @@
                         return;
                     }
                 }
-
-                const { data: subjectsData, error } = await supabaseClient
+                
+                // Clear any existing subjects
+                subjects = [];
+                
+                const userId = currentUser.id;
+                
+                // Fetch subjects from the database
+                const { data, error } = await supabaseClient
                     .from('subjects')
                     .select('*')
-                    .eq('user_id', currentUser.id);
-
+                    .eq('user_id', userId);
+                    
                 if (error) throw error;
-
-                subjects = subjectsData || [];
-                console.log('Loaded subjects:', subjects);
+                
+                subjects = data || [];
+                
+                // Display the subjects
                 displaySubjects();
             } catch (error) {
                 console.error('Error loading subjects:', error);
@@ -260,94 +258,97 @@
         }
 
         function displaySubjects() {
-            const grid = document.getElementById('subjects-grid');
-            grid.innerHTML = '';
-
+            const container = document.getElementById('subjects-grid');
+            if (!container) return;
+            
+            // Clear existing content
+            container.innerHTML = '';
+            
             if (subjects.length === 0) {
-                grid.innerHTML = `
-                    <div style="text-align: center; padding: 40px;">
-                        <i class="fas fa-book fa-3x" style="color: #6c63ff; margin-bottom: 20px;"></i>
-                        <h3 style="margin-bottom: 10px;">No Subjects Found</h3>
-                        <p style="color: #888;">Add your first subject using the form above.</p>
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
+                        <p>No subjects found. Add your first subject to get started!</p>
                     </div>
                 `;
                 return;
             }
-
+            
+            // Add each subject
             subjects.forEach(subject => {
-                // Use proper field names, checking for both old and new formats
-                const name = subject.name || subject.subject_name || 'Unnamed Subject';
-                const code = subject.code || subject.subject_code || 'No Code';
-                const description = subject.description || 'No description provided';
-                const totalClasses = subject.total_classes || 0;
-
-                const card = document.createElement('div');
-                card.className = 'subject-card';
-                card.innerHTML = `
+                const attendancePercentage = calculateAttendancePercentage(subject);
+                
+                const subjectElement = document.createElement('div');
+                subjectElement.className = 'subject-card';
+                
+                // Set color class based on attendance percentage
+                let statusClass = 'good';
+                if (attendancePercentage < 75) statusClass = 'warning';
+                if (attendancePercentage < 60) statusClass = 'danger';
+                
+                subjectElement.innerHTML = `
                     <div class="subject-header">
-                        <div class="subject-name">${name}</div>
-                        <div class="subject-code">${code}</div>
+                        <h3 class="subject-name">${subject.name}</h3>
+                        <span class="subject-code">${subject.code}</span>
                     </div>
-                    
-                    <div class="subject-description">
-                        ${description}
+                    <div class="subject-attendance ${statusClass}">
+                        <div class="attendance-percentage">${attendancePercentage}%</div>
+                        <div class="attendance-label">Attendance</div>
                     </div>
-
-                    <div style="color: #888; margin-top: 10px;">
-                        <i class="fas fa-calendar-alt"></i> Total Classes: ${totalClasses}
+                    <div class="subject-stats">
+                        <div class="stat">
+                            <span class="stat-value">${subject.classes_attended || 0}</span>
+                            <span class="stat-label">Attended</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${subject.total_classes || 0}</span>
+                            <span class="stat-label">Total</span>
+                        </div>
                     </div>
-
                     <div class="subject-actions">
-                        <button class="btn edit" onclick="showEditModal('${subject.id}')">
+                        <button class="btn btn-edit" onclick="openEditModal(${JSON.stringify(subject).replace(/"/g, '&quot;')})">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="btn delete" onclick="deleteSubject('${subject.id}')">
+                        <button class="btn btn-delete" onclick="deleteSubject('${subject.id}')">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
                 `;
-
-                grid.appendChild(card);
+                
+                container.appendChild(subjectElement);
             });
         }
 
+        // Handle adding a new subject
         async function handleAddSubject(event) {
             event.preventDefault();
             
-            // Get form data
-            const subjectName = document.getElementById('subject-name').value.trim();
-            const subjectCode = document.getElementById('subject-code').value.trim();
-            const totalClasses = parseInt(document.getElementById('total-classes').value);
-            const description = document.getElementById('subject-description').value.trim();
-            const addButton = document.querySelector('#add-subject-form button[type="submit"]');
+            const subjectName = document.getElementById('subject-name').value;
+            const subjectCode = document.getElementById('subject-code').value;
+            const totalClasses = document.getElementById('total-classes').value;
+            const description = document.getElementById('subject-description').value;
             
-            // Validate inputs
-            if (!subjectName || !subjectCode) {
-                showMessage('Please fill in all required fields', 'error');
-                return;
-            }
-            
-            // Disable button and show loading
-            addButton.disabled = true;
-            addButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            const addButton = document.getElementById('add-subject-btn');
             
             try {
-                // Check if user is already logged in
-                if (!currentUser) {
-                    window.location.href = 'login.html';
+                // Disable the button during the operation
+                addButton.disabled = true;
+                addButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+                
+                // Validate inputs
+                if (!subjectName || !subjectCode) {
+                    showMessage('Please fill in all required fields', 'error');
                     return;
                 }
                 
-                // Check if subject with same code already exists for this user
-                const { data: existingSubjects, error: fetchError } = await supabaseClient
+                // Check if subject with this code already exists
+                const { data: existingSubjects, error: checkError } = await supabaseClient
                     .from('subjects')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .eq('code', subjectCode);
-                
-                if (fetchError) {
-                    throw fetchError;
-                }
+                    .select('id')
+                    .eq('code', subjectCode)
+                    .eq('user_id', currentUser.id);
+                    
+                if (checkError) throw checkError;
                 
                 if (existingSubjects && existingSubjects.length > 0) {
                     showMessage('Subject with this code already exists', 'error');
@@ -356,20 +357,19 @@
                     return;
                 }
                 
-                // Insert new subject
+                // Add the subject to the database
                 const { data, error } = await supabaseClient
                     .from('subjects')
                     .insert([
-                        {
-                            name: subjectName,
+                        { 
+                            name: subjectName, 
                             code: subjectCode,
                             total_classes: totalClasses,
                             description: description,
-                            user_id: currentUser.id,
-                            created_at: new Date()
+                            user_id: currentUser.id
                         }
                     ]);
-                
+                    
                 if (error) throw error;
                 
                 // Show success message
@@ -378,7 +378,7 @@
                 // Reset form
                 document.getElementById('add-subject-form').reset();
                 
-                // Reload subjects
+                // Reload subjects to display the new one
                 await loadSubjects();
             } catch (error) {
                 console.error('Error adding subject:', error);
@@ -386,52 +386,63 @@
             } finally {
                 // Re-enable button
                 addButton.disabled = false;
-                addButton.innerHTML = 'Add Subject';
+                addButton.innerHTML = '<i class="fas fa-plus"></i> Add Subject';
             }
         }
 
-        function showEditModal(subjectId) {
-            currentEditingSubject = subjects.find(s => s.id === subjectId);
-            if (!currentEditingSubject) return;
-
-            document.getElementById('edit-name').value = currentEditingSubject.name;
-            document.getElementById('edit-code').value = currentEditingSubject.code;
-            document.getElementById('edit-total-classes').value = currentEditingSubject.total_classes;
-            document.getElementById('edit-description').value = currentEditingSubject.description || '';
-
-            document.getElementById('edit-modal').style.display = 'block';
+        // Open edit modal
+        function openEditModal(subject) {
+            currentEditingSubject = subject;
+            
+            document.getElementById('edit-subject-name').value = subject.name;
+            document.getElementById('edit-subject-code').value = subject.code;
+            document.getElementById('edit-total-classes').value = subject.total_classes;
+            document.getElementById('edit-subject-description').value = subject.description || '';
+            
+            document.getElementById('edit-modal').style.display = 'flex';
         }
 
+        // Close edit modal
         function closeEditModal() {
             document.getElementById('edit-modal').style.display = 'none';
             currentEditingSubject = null;
         }
 
+        // Update subject
         async function updateSubject() {
             if (!currentEditingSubject) return;
-
-            const updates = {
-                name: document.getElementById('edit-name').value.trim(),
-                code: document.getElementById('edit-code').value.trim(),
-                total_classes: parseInt(document.getElementById('edit-total-classes').value),
-                description: document.getElementById('edit-description').value.trim(),
-                updated_at: new Date()
-            };
-
+            
+            const subjectName = document.getElementById('edit-subject-name').value;
+            const subjectCode = document.getElementById('edit-subject-code').value;
+            const totalClasses = document.getElementById('edit-total-classes').value;
+            const description = document.getElementById('edit-subject-description').value;
+            
             try {
-                const { data, error } = await supabaseClient
+                const { error } = await supabaseClient
                     .from('subjects')
-                    .update(updates)
-                    .eq('id', currentEditingSubject.id)
-                    .select();
-
+                    .update({ 
+                        name: subjectName, 
+                        code: subjectCode,
+                        total_classes: totalClasses,
+                        description: description
+                    })
+                    .eq('id', currentEditingSubject.id);
+                    
                 if (error) throw error;
-
+                
+                // Update the local subject data
                 const index = subjects.findIndex(s => s.id === currentEditingSubject.id);
                 if (index !== -1) {
-                    subjects[index] = data[0];
+                    subjects[index] = {
+                        ...subjects[index],
+                        name: subjectName,
+                        code: subjectCode,
+                        total_classes: totalClasses,
+                        description: description
+                    };
                 }
-
+                
+                // Refresh the displayed subjects
                 displaySubjects();
                 closeEditModal();
                 showMessage('Subject updated successfully!', 'success');
@@ -441,28 +452,21 @@
             }
         }
 
+        // Delete subject
         async function deleteSubject(subjectId) {
-            if (!confirm('Are you sure you want to delete this subject? This will also delete all attendance records for this subject.')) {
+            if (!confirm('Are you sure you want to delete this subject? This action cannot be undone.')) {
                 return;
             }
-
+            
             try {
-                // First delete all attendance records for this subject
-                const { error: attendanceError } = await supabaseClient
-                    .from('attendance')
-                    .delete()
-                    .eq('subject_id', subjectId);
-
-                if (attendanceError) throw attendanceError;
-
-                // Then delete the subject
-                const { error: subjectError } = await supabaseClient
+                const { error } = await supabaseClient
                     .from('subjects')
                     .delete()
                     .eq('id', subjectId);
-
-                if (subjectError) throw subjectError;
-
+                    
+                if (error) throw error;
+                
+                // Remove from local array
                 subjects = subjects.filter(s => s.id !== subjectId);
                 displaySubjects();
                 showMessage('Subject deleted successfully!', 'success');
@@ -472,15 +476,24 @@
             }
         }
 
-        // Open add subject modal
-        function openAddSubjectModal() {
-            document.getElementById('add-subject-modal').style.display = 'block';
+        // Calculate attendance percentage for a subject
+        function calculateAttendancePercentage(subject) {
+            if (!subject.total_classes || subject.total_classes === 0) return 0;
+            
+            const attended = subject.classes_attended || 0;
+            const total = subject.total_classes;
+            
+            return Math.round((attended / total) * 100);
         }
-        
-        // Close add subject modal
-        function closeAddSubjectModal() {
-            document.getElementById('add-subject-modal').style.display = 'none';
-            document.getElementById('add-subject-form').reset();
+
+        // Close all modals
+        function closeAllModals() {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.style.display = 'none';
+            });
+            // Reset any editing state
+            currentEditingSubject = null;
         }
     </script>
     <style>
@@ -941,6 +954,118 @@
             color: var(--primary);
             font-size: 1.5rem;
         }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            padding: 2rem;
+            border-radius: var(--radius-md);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .modal-content .form-group input,
+        .modal-content .form-group textarea {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--white);
+        }
+
+        .modal-content .form-group label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .btn.btn-edit {
+            background: linear-gradient(to right, #00BCD4, #00E5FF);
+        }
+
+        .btn.btn-delete {
+            background: linear-gradient(to right, #FF5252, #FF1744);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .subject-attendance {
+            background-color: rgba(0, 200, 83, 0.1);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .subject-attendance.good {
+            background-color: rgba(0, 200, 83, 0.1);
+            color: var(--success);
+        }
+
+        .subject-attendance.warning {
+            background-color: rgba(255, 171, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .subject-attendance.danger {
+            background-color: rgba(255, 23, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .attendance-percentage {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .attendance-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .subject-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 1rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -1005,22 +1130,22 @@
     <div id="edit-modal" class="modal">
         <div class="modal-content">
             <h2 style="margin-bottom: 20px; color: #fff;">Edit Subject</h2>
-            <form id="edit-form" onsubmit="return false;">
+            <form id="edit-subject-form" onsubmit="return false;">
                 <div class="form-group">
-                    <label for="edit-name">Subject Name</label>
-                    <input type="text" id="edit-name" required>
+                    <label for="edit-subject-name">Subject Name</label>
+                    <input type="text" id="edit-subject-name" required>
                 </div>
                 <div class="form-group">
-                    <label for="edit-code">Subject Code</label>
-                    <input type="text" id="edit-code" required>
+                    <label for="edit-subject-code">Subject Code</label>
+                    <input type="text" id="edit-subject-code" required>
                 </div>
                 <div class="form-group">
                     <label for="edit-total-classes">Total Classes</label>
                     <input type="number" id="edit-total-classes" required min="1">
                 </div>
                 <div class="form-group">
-                    <label for="edit-description">Description (Optional)</label>
-                    <textarea id="edit-description" rows="3"></textarea>
+                    <label for="edit-subject-description">Description (Optional)</label>
+                    <textarea id="edit-subject-description" rows="3"></textarea>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn" onclick="updateSubject()">

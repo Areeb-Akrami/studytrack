@@ -3,24 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - StudentTracker</title>
+    <title>Sign Up - StudyTrack</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
     <script>
-        // Initialize Supabase directly in the head for earlier availability
-        const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize Supabase client
+                const supabaseClient = window.supabaseUtils.initializeSupabase();
+                if (!supabaseClient) {
+                    console.error('Supabase not available');
+                    showMessage('Authentication service is not available. Please refresh the page.', 'error');
+                    return;
+                }
+                
+                // Check if user is already logged in
+                try {
+                    const user = await window.supabaseUtils.getCurrentUser();
+                    if (user) {
+                        console.log('User already logged in, redirecting to dashboard');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error checking authentication status:', error);
+                    showMessage('Failed to check authentication status. Please refresh the page.', 'error');
+                }
+                
+                // Set up signup form submission
+                const signupForm = document.getElementById('signup-form');
+                if (signupForm) {
+                    signupForm.addEventListener('submit', async function(event) {
+                        event.preventDefault();
+                        
+                        const nameInput = document.getElementById('name');
+                        const emailInput = document.getElementById('email');
+                        const passwordInput = document.getElementById('password');
+                        const confirmPasswordInput = document.getElementById('confirm-password');
+                        const submitButton = document.querySelector('button[type="submit"]');
+                        
+                        if (!nameInput || !emailInput || !passwordInput || !confirmPasswordInput) {
+                            showMessage('Form inputs not found. Please refresh the page.', 'error');
+                            return;
+                        }
+                        
+                        const name = nameInput.value.trim();
+                        const email = emailInput.value.trim();
+                        const password = passwordInput.value;
+                        const confirmPassword = confirmPasswordInput.value;
+                        
+                        // Validate inputs
+                        if (!name || !email || !password || !confirmPassword) {
+                            showMessage('Please fill in all fields.', 'error');
+                            return;
+                        }
+                        
+                        if (password !== confirmPassword) {
+                            showMessage('Passwords do not match.', 'error');
+                            return;
+                        }
+                        
+                        if (password.length < 6) {
+                            showMessage('Password must be at least 6 characters long.', 'error');
+                            return;
+                        }
+                        
+                        // Show loading state
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+                        
+                        try {
+                            // Sign up with email and password
+                            const { data, error } = await supabaseClient.auth.signUp({
+                                email: email,
+                                password: password,
+                                options: {
+                                    data: {
+                                        name: name
+                                    }
+                                }
+                            });
+                            
+                            if (error) throw error;
+                            
+                            showMessage('Account created successfully! Redirecting to login...', 'success');
+                            
+                            // Redirect to login after successful signup
+                            setTimeout(() => {
+                                window.location.href = 'login.html';
+                            }, 2000);
+                            
+                        } catch (error) {
+                            console.error('Signup error:', error);
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = 'Sign Up';
+                            showMessage(error.message || 'Failed to create account. Please try again.', 'error');
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error in initialization:', error);
+                showMessage('Failed to initialize the signup page. Please refresh.', 'error');
+            }
+        });
         
-        // Initialize client when the script loads
-        let supabaseClient;
-        if (window.supabase) {
-            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-            console.log('Supabase client initialized in head section');
-        } else {
-            console.error('Supabase library not available yet');
+        // Function to show messages to the user
+        function showMessage(message, type) {
+            const container = document.getElementById('message-container');
+            if (!container) return;
+            
+            const msgElement = document.createElement('div');
+            msgElement.className = `message ${type}-message`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-check-circle'; break;
+                case 'error': icon = 'fa-exclamation-circle'; break;
+                case 'warning': icon = 'fa-exclamation-triangle'; break;
+                default: icon = 'fa-info-circle';
+            }
+            
+            msgElement.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(msgElement);
+            
+            // Auto-remove message after 5 seconds
+            setTimeout(() => {
+                msgElement.style.opacity = '0';
+                setTimeout(() => msgElement.remove(), 300);
+            }, 5000);
         }
     </script>
     <style>
+        :root {
+            --primary: #7C4DFF;
+            --primary-dark: #651FFF;
+            --secondary: #00E676;
+            --danger: #FF1744;
+            --warning: #FFAB00;
+            --info: #00B0FF;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --bg-primary: #F8FAFC;
+            --white: #FFFFFF;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --radius-sm: 0.25rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 1rem;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -29,299 +167,275 @@
         }
 
         body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
-            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 0% 0%, rgba(124, 77, 255, 0.1) 0%, transparent 60%),
+                radial-gradient(circle at 100% 0%, rgba(0, 230, 118, 0.1) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(0, 176, 255, 0.1) 0%, transparent 60%),
+                radial-gradient(circle at 0% 100%, rgba(255, 171, 0, 0.1) 0%, transparent 60%);
+            z-index: -1;
+        }
+
+        .logo {
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            gap: 0.75rem;
+        }
+
+        .logo i {
+            color: var(--primary);
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 500px;
+            padding: 2.5rem;
+            margin-bottom: 1.5rem;
             position: relative;
             overflow: hidden;
-            opacity: 0;
-            animation: fadeIn 0.5s ease forwards;
         }
 
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        .background-shapes {
+        .card::before {
+            content: '';
             position: absolute;
-            inset: 0;
-            z-index: 0;
-            opacity: 0.5;
-        }
-
-        .shape {
-            position: absolute;
-            background: linear-gradient(45deg, #6c63ff, #2d1faf);
-            border-radius: 50%;
-            filter: blur(40px);
-            animation: float 8s infinite;
-        }
-
-        .shape:nth-child(1) {
-            width: 300px;
-            height: 300px;
-            top: -150px;
-            left: -150px;
-            animation-delay: 0s;
-        }
-
-        .shape:nth-child(2) {
-            width: 400px;
-            height: 400px;
-            bottom: -200px;
-            right: -200px;
-            animation-delay: 2s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-20px) scale(1.05); }
-        }
-
-        .signup-container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            padding: 40px;
-            border-radius: 20px;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 450px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
-            z-index: 1;
-            transition: all 0.5s ease;
+            height: 6px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
         }
 
         h1 {
-            color: white;
+            margin-bottom: 1.5rem;
+            font-size: 1.75rem;
+            color: var(--text-primary);
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 2rem;
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 1.5rem;
         }
 
-        label {
+        .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
             font-size: 0.9rem;
+            color: var(--text-secondary);
         }
 
-        input {
+        .form-group input {
             width: 100%;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: white;
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            border-radius: var(--radius-md);
             font-size: 1rem;
             transition: all 0.3s ease;
         }
 
-        input:focus {
+        .form-group input:focus {
             outline: none;
-            border-color: #6c63ff;
-            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.1);
         }
 
         button {
             width: 100%;
-            padding: 15px;
-            background: #6c63ff;
-            color: white;
+            padding: 0.75rem;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
+            background: var(--primary);
+            color: var(--white);
             font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         button:hover {
-            background: #5b52ff;
-            transform: translateY(-3px);
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.3);
+        }
+
+        button:disabled {
+            background: #A0AEC0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .login-link {
             text-align: center;
-            margin-top: 20px;
-        }
-
-        .login-link p {
-            color: rgba(255, 255, 255, 0.7);
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
         }
 
         .login-link a {
-            color: #6c63ff;
+            color: var(--primary);
             text-decoration: none;
             font-weight: 500;
             transition: all 0.3s ease;
         }
 
         .login-link a:hover {
-            color: #5b52ff;
+            text-decoration: underline;
+        }
+
+        #message-container {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: var(--white);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .success-message {
+            border-left: 4px solid var(--secondary);
+        }
+
+        .success-message i {
+            color: var(--secondary);
         }
 
         .error-message {
-            background: rgba(255, 59, 48, 0.1);
-            color: #ff3b30;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 20px;
-            text-align: center;
-            animation: shake 0.5s ease-in-out;
+            border-left: 4px solid var(--danger);
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
+        .error-message i {
+            color: var(--danger);
+        }
+
+        .warning-message {
+            border-left: 4px solid var(--warning);
+        }
+
+        .warning-message i {
+            color: var(--warning);
+        }
+
+        .info-message {
+            border-left: 4px solid var(--info);
+        }
+
+        .info-message i {
+            color: var(--info);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .card {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="background-shapes">
-        <div class="shape"></div>
-        <div class="shape"></div>
+    <div class="logo">
+        <i class="fas fa-graduation-cap"></i>
+        StudyTrack
     </div>
     
-    <div class="signup-container">
-        <h1>Create Account</h1>
+    <div class="card">
+        <h1>Create an Account</h1>
+        <div id="message-container"></div>
+        
         <form id="signup-form">
             <div class="form-group">
                 <label for="name">Full Name</label>
-                <input type="text" id="name" required>
+                <input type="text" id="name" placeholder="Enter your full name" required>
             </div>
+            
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="email" id="email" required>
+                <input type="email" id="email" placeholder="Enter your email" required>
             </div>
+            
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" required>
+                <input type="password" id="password" placeholder="Create a password" required>
             </div>
+            
             <div class="form-group">
                 <label for="confirm-password">Confirm Password</label>
-                <input type="password" id="confirm-password" required>
+                <input type="password" id="confirm-password" placeholder="Confirm your password" required>
             </div>
-            <button type="submit" id="signup-button">Sign Up</button>
+            
+            <button type="submit">
+                <i class="fas fa-user-plus"></i> Sign Up
+            </button>
         </form>
+        
         <div class="login-link">
-            <p>Already have an account? <a href="login.html" id="login-link">Login</a></p>
+            Already have an account? <a href="login.html">Log in</a>
         </div>
     </div>
-
-    <div id="loading-indicator" style="display: none;" class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i> Loading...
-    </div>
-    <div id="subjects-container">
-        <!-- Subjects will be loaded here -->
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const messageContainer = document.getElementById('message-container');
-            const signupForm = document.getElementById('signup-form');
-            const signupButton = document.getElementById('signup-button');
-            
-            // Ensure Supabase client is available
-            if (!window.supabase) {
-                console.error('Supabase library failed to load');
-                showMessage('Authentication service is not available. Please refresh the page.', 'error');
-                return;
-            }
-            
-            // Use the global supabaseClient if available, otherwise create a new one
-            let supabase = supabaseClient;
-            if (!supabase) {
-                try {
-                    supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-                    console.log('Supabase client initialized in DOMContentLoaded');
-                } catch (error) {
-                    console.error('Failed to initialize Supabase client:', error);
-                    showMessage('Failed to initialize authentication. Please refresh the page.', 'error');
-                    return;
-                }
-            }
-            
-            // Check if user is already logged in
-            try {
-                const { data, error } = await supabase.auth.getUser();
-                if (error) throw error;
-                
-                if (data.user) {
-                    window.location.href = 'index.html';
-                    return;
-                }
-            } catch (error) {
-                console.error('Error checking authentication status:', error);
-                showMessage('Failed to check authentication status. Please refresh the page.', 'error');
-            }
-            
-            // Handle signup form submission
-            signupForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const name = document.getElementById('name').value;
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('confirm-password').value;
-                
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match');
-                    return;
-                }
-                
-                try {
-                    // Show loading state
-                    signupButton.textContent = 'Creating account...';
-                    signupButton.disabled = true;
-                    
-                    // Sign up with Supabase
-                    await supabase.auth.signUp(email, password, { data: { name } });
-                    
-                    // Show success animation
-                    document.querySelector('.signup-container').style.transform = 'scale(0.95)';
-                    document.querySelector('.signup-container').style.opacity = '0';
-                    
-                    // Redirect to login page
-                    setTimeout(() => {
-                        window.location.href = 'login.html?registered=true';
-                    }, 500);
-                    
-                } catch (error) {
-                    // Reset button
-                    signupButton.textContent = 'Sign Up';
-                    signupButton.disabled = false;
-                    
-                    // Show error message
-                    if (!document.querySelector('.error-message')) {
-                        const errorMsg = document.createElement('div');
-                        errorMsg.className = 'error-message';
-                        errorMsg.textContent = error.message || 'Error creating account';
-                        document.querySelector('.signup-container').appendChild(errorMsg);
-                        
-                        setTimeout(() => {
-                            errorMsg.remove();
-                        }, 3000);
-                    }
-                }
-            });
-
-            // Add smooth transition for login link
-            document.getElementById('login-link').addEventListener('click', function(e) {
-                e.preventDefault();
-                document.body.style.opacity = '0';
-                setTimeout(() => {
-                    window.location.href = this.href;
-                }, 500);
-            });
-        });
-    </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </body>
 </html> 

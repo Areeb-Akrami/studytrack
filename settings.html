@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - StudyTrack</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --primary: #7c4dff;
+            --primary-light: #e8e3ff;
+            --primary-dark: #4527a0;
+            --success: #00e676;
+            --success-light: #ccf7e5;
+            --success-dark: #00c853;
+            --danger: #ff5252;
+            --danger-light: #ffeded;
+            --danger-dark: #d50000;
+            --warning: #ffab40;
+            --warning-light: #fff5e6;
+            --warning-dark: #ff9100;
+            --info: #00b0ff;
+            --info-light: #e6f7ff;
+            --info-dark: #0091ea;
+            --white: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --background: #f9f9fb;
+            --border: #e0e0e0;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+            --gradient-primary: linear-gradient(45deg, #7c4dff, #00e676);
+            --gradient-secondary: linear-gradient(45deg, #00e676, #00c853);
+            --gradient-danger: linear-gradient(45deg, #ff5252, #d50000);
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+        }
+
+        .settings-section h2 {
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-item {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+
+        .settings-item label {
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .settings-item input, .settings-item select {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            color: var(--text-primary);
+            width: 100%;
+            background: var(--background);
+        }
+
+        .settings-item input:focus, .settings-item select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(124, 77, 255, 0.2);
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .btn-save {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-cancel {
+            background: var(--background);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            margin-top: 20px;
+        }
+
+        .btn-info {
+            background: var(--info);
+            color: white;
+        }
+
+        .user-info {
+            background: var(--primary-light);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+
+        .user-info p {
+            margin: 8px 0;
+            color: var(--text-primary);
+        }
+
+        .user-info strong {
+            color: var(--primary-dark);
+        }
+
+        .danger-zone {
+            background: var(--danger-light);
+            border: 1px dashed var(--danger);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin-top: 20px;
+        }
+
+        .danger-zone h3 {
+            color: var(--danger-dark);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .danger-zone p {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .modal h3 {
+            color: var(--danger-dark);
+            margin-bottom: 16px;
+        }
+
+        .modal p {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        #message-container {
+            margin-top: 20px;
+        }
+
+        .success-message, .error-message, .info-message {
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+        }
+
+        .success-message {
+            background: var(--success-light);
+            color: var(--success-dark);
+            border-left: 4px solid var(--success);
+        }
+
+        .error-message {
+            background: var(--danger-light);
+            color: var(--danger-dark);
+            border-left: 4px solid var(--danger);
+        }
+
+        .info-message {
+            background: var(--info-light);
+            color: var(--info-dark);
+            border-left: 4px solid var(--info);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fas fa-graduation-cap"></i>
+            StudyTrack
+        </a>
+        <button class="menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false" onclick="toggleMenu()">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+        </button>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Dashboard</a>
+            <a href="subjects.html">Subjects</a>
+            <a href="attendance.html">Attendance</a>
+            <a href="settings.html" class="active">Settings</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="page-header">Account Settings</h1>
+
+        <div class="settings-section">
+            <h2>Account Information</h2>
+            <div id="user-info" class="user-info">
+                <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
+                <p><strong>User ID:</strong> <span id="user-id">Loading...</span></p>
+                <p><strong>Account Created:</strong> <span id="user-created">Loading...</span></p>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2>Data Management</h2>
+            <p>Manage your application data and settings.</p>
+            
+            <div class="settings-actions">
+                <button class="btn btn-info" id="export-data-btn">
+                    <i class="fas fa-download"></i> Export My Data
+                </button>
+            </div>
+            
+            <div class="danger-zone">
+                <h3>Danger Zone</h3>
+                <p>These actions cannot be undone. Be careful!</p>
+                
+                <button class="btn btn-danger" id="delete-data-btn">
+                    <i class="fas fa-trash"></i> Delete My Data
+                </button>
+                
+                <button class="btn btn-danger" id="delete-account-btn">
+                    <i class="fas fa-user-slash"></i> Delete My Account
+                </button>
+            </div>
+        </div>
+
+        <div id="message-container"></div>
+    </div>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <h3>Delete Account</h3>
+            <p>Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.</p>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="cancel-delete-btn">Cancel</button>
+                <button class="btn btn-danger" id="confirm-delete-btn">Delete Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Data Confirmation Modal -->
+    <div id="delete-data-modal" class="modal">
+        <div class="modal-content">
+            <h3>Delete All Data</h3>
+            <p>Are you sure you want to delete all your data? This includes subjects, attendance records, and all other application data. This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="cancel-data-delete-btn">Cancel</button>
+                <button class="btn btn-danger" id="confirm-data-delete-btn">Delete All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="supabase.js"></script>
+    <script>
+        // Toggle menu function for mobile responsiveness
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+            
+            const menuToggle = document.querySelector('.menu-toggle');
+            const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+            menuToggle.setAttribute('aria-expanded', !isExpanded);
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check if user is logged in
+            const user = await checkUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Display user information
+            displayUserInfo(user);
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+        
+        async function displayUserInfo(user) {
+            document.getElementById('user-email').textContent = user.email;
+            document.getElementById('user-id').textContent = user.id;
+            
+            const createdAt = new Date(user.created_at);
+            document.getElementById('user-created').textContent = createdAt.toLocaleDateString() + ' ' + createdAt.toLocaleTimeString();
+        }
+        
+        function setupEventListeners() {
+            // Logout button
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+            
+            // Delete account button
+            const deleteAccountBtn = document.getElementById('delete-account-btn');
+            if (deleteAccountBtn) {
+                deleteAccountBtn.addEventListener('click', () => {
+                    document.getElementById('delete-modal').style.display = 'flex';
+                });
+            }
+            
+            // Cancel delete account
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            if (cancelDeleteBtn) {
+                cancelDeleteBtn.addEventListener('click', () => {
+                    document.getElementById('delete-modal').style.display = 'none';
+                });
+            }
+            
+            // Confirm delete account
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', handleAccountDeletion);
+            }
+            
+            // Delete data button
+            const deleteDataBtn = document.getElementById('delete-data-btn');
+            if (deleteDataBtn) {
+                deleteDataBtn.addEventListener('click', () => {
+                    document.getElementById('delete-data-modal').style.display = 'flex';
+                });
+            }
+            
+            // Cancel delete data
+            const cancelDataDeleteBtn = document.getElementById('cancel-data-delete-btn');
+            if (cancelDataDeleteBtn) {
+                cancelDataDeleteBtn.addEventListener('click', () => {
+                    document.getElementById('delete-data-modal').style.display = 'none';
+                });
+            }
+            
+            // Confirm delete data
+            const confirmDataDeleteBtn = document.getElementById('confirm-data-delete-btn');
+            if (confirmDataDeleteBtn) {
+                confirmDataDeleteBtn.addEventListener('click', handleDataDeletion);
+            }
+            
+            // Export data button
+            const exportDataBtn = document.getElementById('export-data-btn');
+            if (exportDataBtn) {
+                exportDataBtn.addEventListener('click', handleDataExport);
+            }
+            
+            // Close modals on click outside
+            window.addEventListener('click', function(event) {
+                const deleteModal = document.getElementById('delete-modal');
+                const dataModal = document.getElementById('delete-data-modal');
+                
+                if (event.target === deleteModal) {
+                    deleteModal.style.display = 'none';
+                }
+                
+                if (event.target === dataModal) {
+                    dataModal.style.display = 'none';
+                }
+            });
+        }
+        
+        async function handleLogout() {
+            try {
+                await signOut();
+                window.location.href = 'login.html?loggedout=true';
+            } catch (error) {
+                console.error('Error logging out:', error);
+                showMessage('Failed to log out. Please try again.', 'error');
+            }
+        }
+        
+        async function handleAccountDeletion() {
+            const user = await checkUser();
+            if (!user) {
+                showMessage('You must be logged in to delete your account.', 'error');
+                return;
+            }
+            
+            // Delete user data
+            const deleteBtn = document.getElementById('confirm-delete-btn');
+            const originalText = deleteBtn.textContent;
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            
+            try {
+                const result = await requestAccountDeletion(user.id);
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    document.getElementById('delete-modal').style.display = 'none';
+                    
+                    // Provide additional instructions
+                    if (result.note) {
+                        setTimeout(() => {
+                            showMessage(result.note, 'info');
+                        }, 2000);
+                    }
+                    
+                    // Log out the user
+                    setTimeout(async () => {
+                        await signOut();
+                        window.location.href = 'login.html?loggedout=true';
+                    }, 5000);
+                    
+                } else {
+                    showMessage(result.message, 'error');
+                    document.getElementById('delete-modal').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                showMessage('Failed to delete account. Please try again later.', 'error');
+                document.getElementById('delete-modal').style.display = 'none';
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = originalText;
+            }
+        }
+        
+        async function handleDataDeletion() {
+            const user = await checkUser();
+            if (!user) {
+                showMessage('You must be logged in to delete your data.', 'error');
+                return;
+            }
+            
+            const deleteBtn = document.getElementById('confirm-data-delete-btn');
+            const originalText = deleteBtn.textContent;
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            
+            try {
+                // Delete attendance records
+                const { error: attendanceError } = await supabase
+                    .from('attendance')
+                    .delete()
+                    .eq('user_id', user.id);
+                    
+                if (attendanceError) {
+                    console.error('Error deleting attendance records:', attendanceError);
+                    throw new Error('Failed to delete attendance records');
+                }
+                
+                // Delete subjects
+                const { error: subjectsError } = await supabase
+                    .from('subjects')
+                    .delete()
+                    .eq('user_id', user.id);
+                    
+                if (subjectsError) {
+                    console.error('Error deleting subjects:', subjectsError);
+                    throw new Error('Failed to delete subjects');
+                }
+                
+                showMessage('All your data has been successfully deleted.', 'success');
+                document.getElementById('delete-data-modal').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error deleting data:', error);
+                showMessage('Failed to delete data. Please try again later.', 'error');
+                document.getElementById('delete-data-modal').style.display = 'none';
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = originalText;
+            }
+        }
+        
+        async function handleDataExport() {
+            const user = await checkUser();
+            if (!user) {
+                showMessage('You must be logged in to export your data.', 'error');
+                return;
+            }
+            
+            const exportBtn = document.getElementById('export-data-btn');
+            const originalText = exportBtn.textContent;
+            exportBtn.disabled = true;
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+            
+            try {
+                // Fetch subjects
+                const { data: subjects, error: subjectsError } = await supabase
+                    .from('subjects')
+                    .select('*')
+                    .eq('user_id', user.id);
+                    
+                if (subjectsError) {
+                    console.error('Error fetching subjects:', subjectsError);
+                    throw new Error('Failed to fetch subjects');
+                }
+                
+                // Fetch attendance records
+                const { data: attendance, error: attendanceError } = await supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('user_id', user.id);
+                    
+                if (attendanceError) {
+                    console.error('Error fetching attendance:', attendanceError);
+                    throw new Error('Failed to fetch attendance records');
+                }
+                
+                // Create export data
+                const exportData = {
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        created_at: user.created_at
+                    },
+                    subjects: subjects,
+                    attendance: attendance,
+                    exported_at: new Date().toISOString()
+                };
+                
+                // Convert to JSON and download
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                
+                const exportFileName = 'studytrack_export_' + new Date().toISOString().split('T')[0] + '.json';
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileName);
+                linkElement.click();
+                
+                showMessage('Data exported successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showMessage('Failed to export data. Please try again later.', 'error');
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.textContent = originalText;
+            }
+        }
+        
+        function showMessage(message, type) {
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.innerHTML = `<div class="${type}-message">${message}</div>`;
+            
+            // Scroll to message
+            messageContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

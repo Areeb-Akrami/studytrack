@@ -7,19 +7,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
-        // Check if Supabase loaded correctly
-        window.addEventListener('DOMContentLoaded', function() {
-            if (!window.supabase) {
-                console.error('Supabase library failed to load');
-                document.getElementById('login-form').style.display = 'none';
-                setTimeout(() => {
-                    const messageContainer = document.getElementById('message-container');
-                    if (messageContainer) {
-                        messageContainer.innerHTML = '<div class="error-message">Authentication service unavailable. Please refresh the page or try again later.</div>';
-                    }
-                }, 500);
-            }
-        });
+        // Initialize Supabase directly in the head for earlier availability
+        const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
+        
+        // Initialize client when the script loads
+        let supabaseClient;
+        if (window.supabase) {
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            console.log('Supabase client initialized in head section');
+        } else {
+            console.error('Supabase library not available yet');
+        }
     </script>
     <style>
         * {
@@ -244,23 +243,39 @@
         <div id="message-container"></div>
     </div>
 
-    <script src="supabase.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
             const messageContainer = document.getElementById('message-container');
             const loginForm = document.getElementById('login-form');
             const loginButton = document.getElementById('login-button');
             
-            // Ensure Supabase is available
+            // Ensure Supabase client is available
             if (!window.supabase) {
+                console.error('Supabase library failed to load');
                 showMessage('Authentication service is not available. Please refresh the page.', 'error');
                 return;
             }
             
+            // Use the global supabaseClient if available, otherwise create a new one
+            let supabase = supabaseClient;
+            if (!supabase) {
+                try {
+                    supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                    console.log('Supabase client initialized in DOMContentLoaded');
+                } catch (error) {
+                    console.error('Failed to initialize Supabase client:', error);
+                    showMessage('Failed to initialize authentication. Please refresh the page.', 'error');
+                    return;
+                }
+            }
+            
             // Check if user is already logged in
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
+                const { data, error } = await supabase.auth.getUser();
+                if (error) throw error;
+                
+                if (data.user) {
+                    console.log('User already logged in, redirecting to dashboard');
                     window.location.href = 'index.html';
                     return;
                 }

@@ -6,46 +6,84 @@
     <title>Attendance Tracker - StudyTrack</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
         // Initialize Supabase directly
         const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
-        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-        window.supabaseClient = supabaseClient; // Make it available globally
         
-        // Set default date to today but allow any past date selection
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Check if user is authenticated
+        // Create client as soon as possible
+        let supabaseClient;
+        try {
+            supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+            console.log('Supabase client initialized early');
+        } catch (error) {
+            console.error('Failed to initialize Supabase client early:', error);
+        }
+        
+        let currentUser = null;
+        let userSubjects = [];
+        let attendanceData = [];
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializePage);
+
+        async function initializePage() {
             try {
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) {
+                // Ensure we have a client
+                if (!supabaseClient && window.supabase) {
+                    supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+                    console.log('Supabase client created in initializePage');
+                }
+                
+                if (!supabaseClient) {
+                    console.error('No Supabase client available');
+                    showMessage('Error: Authentication service unavailable. Please refresh the page.', 'error');
+                    return;
+                }
+                
+                // Check if user is logged in
+                const { data, error } = await supabaseClient.auth.getUser();
+                
+                if (error) {
+                    console.error('Error getting user:', error);
+                    showMessage('Authentication error. Please try logging in again.', 'error');
                     window.location.href = 'login.html';
                     return;
                 }
                 
-                // Initialize date picker
-                const datePicker = document.getElementById('datePicker');
-                if (datePicker) {
-                    // Set to today's date
-                    const today = new Date();
-                    const formattedDate = today.toISOString().substr(0, 10);
-                    datePicker.value = formattedDate;
-                    
-                    // Remove any min attribute to allow past dates
-                    datePicker.removeAttribute('min');
-                    
-                    // Load subjects when date changes
-                    datePicker.addEventListener('change', loadSubjects);
+                currentUser = data.user;
+                if (!currentUser) {
+                    console.log('No user logged in, redirecting to login');
+                    window.location.href = 'login.html';
+                    return;
                 }
+
+                // Add welcome message
+                const welcomeMessage = document.getElementById('welcome-message');
+                if (welcomeMessage) {
+                    const userName = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
+                    welcomeMessage.textContent = `Welcome, ${userName}`;
+                }
+
+                // Set up event listeners
+                setupEventListeners();
                 
+                // Set default date value to today
+                const dateInput = document.getElementById('attendance-date');
+                if (dateInput) {
+                    const today = new Date();
+                    const formattedDate = today.toISOString().split('T')[0];
+                    dateInput.value = formattedDate;
+                }
+
                 // Initial load of subjects
-                loadSubjects();
+                await loadSubjects();
             } catch (error) {
-                console.error('Authentication error:', error);
-                window.location.href = 'login.html';
+                console.error('Error during initialization:', error);
+                showMessage('Error initializing attendance page. Please refresh.', 'error');
             }
-        });
+        }
         
         // Function to load subjects
         async function loadSubjects() {
@@ -578,6 +616,19 @@
             const date = new Date(dateString);
             return date.toLocaleDateString('en-US', options);
         }
+
+        // Function to close the history modal
+        function closeHistoryModal() {
+            document.getElementById('history-modal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('history-modal');
+            if (event.target === modal) {
+                closeHistoryModal();
+            }
+        });
     </script>
     <style>
         :root {
@@ -1794,6 +1845,7 @@
             <a href="index.html">Dashboard</a>
             <a href="subjects.html">Subjects</a>
             <a href="attendance.html" class="active">Attendance</a>
+            <a href="settings.html">Settings</a>
             <a href="#" id="logout-btn">Logout</a>
         </div>
     </nav>

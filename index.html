@@ -8,22 +8,50 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
-        // Wait for Supabase to load
-        window.onload = function() {
-            const { createClient } = supabase;
-            const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
-            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
-            window.supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-            // Initialize page when DOM is loaded
-            initializePage();
-        };
-
+        // Initialize Supabase directly
+        const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
+        
+        // Create client as soon as possible
+        let supabaseClient;
+        if (window.supabase) {
+            try {
+                supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                console.log('Supabase client initialized early');
+            } catch (error) {
+                console.error('Failed to initialize Supabase client early:', error);
+            }
+        }
+        
+        // Function to initialize page
         async function initializePage() {
             try {
+                console.log('Initializing page');
+                // Ensure we have a client
+                if (!supabaseClient && window.supabase) {
+                    supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                    console.log('Supabase client created in initializePage');
+                }
+                
+                if (!supabaseClient) {
+                    console.error('No Supabase client available');
+                    showMessage('Error: Authentication service unavailable. Please refresh the page.', 'error');
+                    return;
+                }
+                
                 // Check if user is logged in
-                const { data: { user } } = await window.supabaseClient.auth.getUser();
+                const { data, error } = await supabaseClient.auth.getUser();
+                
+                if (error) {
+                    console.error('Error getting user:', error);
+                    showMessage('Authentication error. Please try logging in again.', 'error');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                const user = data.user;
                 if (!user) {
+                    console.log('No user logged in, redirecting to login');
                     window.location.href = 'login.html';
                     return;
                 }
@@ -33,6 +61,7 @@
                 if (welcomeMessage) {
                     const userName = user.user_metadata?.name || user.email.split('@')[0];
                     welcomeMessage.textContent = `Welcome, ${userName}`;
+                    welcomeMessage.style.display = 'block';
                 }
 
                 // Set up logout handler
@@ -45,7 +74,10 @@
                 const menuToggle = document.querySelector('.menu-toggle');
                 if (menuToggle) {
                     menuToggle.addEventListener('click', function() {
-                        document.querySelector('.nav-links').classList.toggle('active');
+                        const navLinks = document.querySelector('.nav-links');
+                        if (navLinks) {
+                            navLinks.classList.toggle('active');
+                        }
                     });
                 }
 
@@ -74,7 +106,13 @@
                 button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
                 button.disabled = true;
                 
-                await window.supabaseClient.auth.signOut();
+                if (!supabaseClient) {
+                    console.error('No Supabase client for logout');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                await supabaseClient.auth.signOut();
                 window.location.href = 'login.html?loggedout=true';
             } catch (error) {
                 console.error('Error during logout:', error);
@@ -115,6 +153,9 @@
                 setTimeout(() => messageElement.remove(), 300);
             }, 4000);
         }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializePage);
     </script>
     <style>
         :root {
@@ -570,10 +611,11 @@
         <button class="menu-toggle" aria-label="Toggle navigation">
             <i class="fas fa-bars"></i>
         </button>
-        <div class="nav-links">
+        <div class="nav-links" id="navLinks">
             <a href="index.html" class="active">Dashboard</a>
             <a href="subjects.html">Subjects</a>
             <a href="attendance.html">Attendance</a>
+            <a href="settings.html">Settings</a>
             <a href="#" id="logout-btn">Logout</a>
         </div>
     </nav>

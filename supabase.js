@@ -1,31 +1,203 @@
-// Initialize Supabase client with explicit import from CDN
+// Supabase client initialization and authentication utilities
 const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
 
-// Check if supabase is available from window
-const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+// Create a single supabase client for interacting with the database
+let supabaseClient;
 
-// Display error if supabase client couldn't be initialized
-if (!supabase) {
-    console.error('Supabase client initialization failed. Please check if the Supabase JS library is loaded properly.');
-    // Try to add a visible error on the page if we're on a page with a message container
-    setTimeout(() => {
-        const messageContainer = document.getElementById('message-container');
-        if (messageContainer) {
-            messageContainer.innerHTML = '<div class="error-message">Failed to initialize authentication. Please refresh the page or try again later.</div>';
+// Initialize supabase client as soon as possible
+function initializeSupabase() {
+    try {
+        if (window.supabase) {
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            console.log('Supabase client initialized successfully');
+            return supabaseClient;
+        } else {
+            console.error('Supabase is not available yet');
+            return null;
         }
-    }, 1000);
+    } catch (error) {
+        console.error('Failed to initialize Supabase client:', error);
+        return null;
+    }
 }
 
-// Log initialization for debugging
-console.log('Supabase client initialized with URL:', supabaseUrl);
-console.log('Supabase client object available:', supabase ? 'Yes' : 'No');
+// Get the current authenticated user
+async function getCurrentUser() {
+    if (!supabaseClient) {
+        supabaseClient = initializeSupabase();
+        if (!supabaseClient) {
+            throw new Error('Supabase client not available');
+        }
+    }
+    
+    try {
+        const { data, error } = await supabaseClient.auth.getUser();
+        if (error) throw error;
+        return data.user;
+    } catch (error) {
+        console.error('Error getting current user:', error);
+        return null;
+    }
+}
+
+// Handle logout
+async function handleLogout() {
+    if (!supabaseClient) {
+        supabaseClient = initializeSupabase();
+        if (!supabaseClient) {
+            window.location.href = 'login.html';
+            return;
+        }
+    }
+    
+    try {
+        await supabaseClient.auth.signOut();
+        window.location.href = 'login.html?loggedout=true';
+    } catch (error) {
+        console.error('Error during logout:', error);
+        showMessage('Failed to log out. Please try again.', 'error');
+    }
+}
+
+// Initialize page with authentication check
+async function initializeAuthenticatedPage() {
+    try {
+        supabaseClient = initializeSupabase();
+        if (!supabaseClient) {
+            showMessage('Error: Authentication service unavailable. Please refresh the page.', 'error');
+            return false;
+        }
+        
+        const user = await getCurrentUser();
+        if (!user) {
+            console.log('No user logged in, redirecting to login');
+            window.location.href = 'login.html';
+            return false;
+        }
+        
+        // Add welcome message if element exists
+        const welcomeMessage = document.getElementById('welcome-message');
+        if (welcomeMessage) {
+            const userName = user.user_metadata?.name || user.email.split('@')[0];
+            welcomeMessage.textContent = `Welcome, ${userName}`;
+            welcomeMessage.style.display = 'block';
+        }
+        
+        // Set up logout handler
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', handleLogout);
+        }
+        
+        return user;
+    } catch (error) {
+        console.error('Error initializing authenticated page:', error);
+        showMessage('Authentication error. Please try logging in again.', 'error');
+        window.location.href = 'login.html';
+        return false;
+    }
+}
+
+// Utility function to display messages
+function showMessage(message, type = 'info') {
+    const container = document.getElementById('message-container');
+    if (!container) return;
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${type}-message`;
+    
+    let icon = '';
+    switch(type) {
+        case 'success': icon = 'fa-check-circle'; break;
+        case 'error': icon = 'fa-exclamation-circle'; break;
+        case 'warning': icon = 'fa-exclamation-triangle'; break;
+        default: icon = 'fa-info-circle';
+    }
+    
+    messageElement.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <span>${message}</span>
+    `;
+    
+    container.appendChild(messageElement);
+    
+    setTimeout(() => {
+        messageElement.style.opacity = '0';
+        messageElement.style.transform = 'translateY(-10px)';
+        messageElement.style.transition = 'all 0.3s ease';
+        
+        setTimeout(() => messageElement.remove(), 300);
+    }, 4000);
+}
+
+// Database error handling
+function handleDatabaseError(error, action) {
+    console.error(`Database error while ${action}:`, error);
+    
+    // Check if it's a Supabase error
+    if (error.code) {
+        switch (error.code) {
+            case '23505': // Unique violation
+                return {
+                    message: 'This record already exists.',
+                    type: 'error'
+                };
+            case '23503': // Foreign key violation
+                return {
+                    message: 'Unable to complete action because it references other data.',
+                    type: 'error'
+                };
+            case '42P01': // Undefined table
+                return {
+                    message: 'Database error: Table not found. Please contact support.',
+                    type: 'error'
+                };
+            case 'PGRST116': // Not found
+                return {
+                    message: 'The requested item was not found.',
+                    type: 'warning'
+                };
+            default:
+                return {
+                    message: `Database error: ${error.message || 'Unknown error occurred'}`,
+                    type: 'error'
+                };
+        }
+    }
+    
+    // Handle network or other errors
+    if (error.message && error.message.includes('Failed to fetch')) {
+        return {
+            message: 'Unable to connect to the database. Please check your internet connection.',
+            type: 'error'
+        };
+    }
+    
+    // Default error
+    return {
+        message: error.message || `Error ${action}. Please try again.`,
+        type: 'error'
+    };
+}
+
+// Export the objects and functions to be used by other scripts
+window.supabaseUtils = {
+    supabaseUrl,
+    supabaseKey,
+    initializeSupabase,
+    getCurrentUser,
+    handleLogout,
+    initializeAuthenticatedPage,
+    showMessage,
+    handleDatabaseError
+};
 
 // Helper functions for Supabase authentication and data operations
 
 async function checkUser() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         return user;
     } catch (error) {
         console.error('Error checking user:', error);
@@ -35,7 +207,7 @@ async function checkUser() {
 
 async function getSession() {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         return session;
     } catch (error) {
         console.error('Error getting session:', error);
@@ -45,7 +217,7 @@ async function getSession() {
 
 async function signUp(email, password) {
     try {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password
         });
@@ -59,7 +231,7 @@ async function signUp(email, password) {
 
 async function signIn(email, password) {
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
@@ -73,7 +245,7 @@ async function signIn(email, password) {
 
 async function signOut() {
     try {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabaseClient.auth.signOut();
         if (error) throw error;
     } catch (error) {
         console.error('Error signing out:', error);
@@ -83,7 +255,7 @@ async function signOut() {
 
 // Record login
 async function recordLogin(userId) {
-  const { error } = await supabase
+  const { error } = await supabaseClient
     .from('user_logins')
     .insert([{ user_id: userId, login_time: new Date() }]);
   
@@ -92,14 +264,14 @@ async function recordLogin(userId) {
 
 // Get user profile
 async function getUserProfile() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   return user;
 }
 
 // Save user data
 async function saveUserData(userId, dataType, data) {
   // Check if data exists for this user and type
-  const { data: existingData, error: fetchError } = await supabase
+  const { data: existingData, error: fetchError } = await supabaseClient
     .from('user_data')
     .select('*')
     .eq('user_id', userId)
@@ -317,6 +489,67 @@ function handleDatabaseError(error, operation = '') {
                 type: 'error',
                 technical: error.message
             };
+    }
+}
+
+// Function to delete user account (requires server-side implementation with admin rights)
+async function requestAccountDeletion(userId) {
+    if (!supabase) {
+        console.error('Supabase client not initialized');
+        return { success: false, message: 'Authentication service unavailable' };
+    }
+    
+    try {
+        // 1. Delete user's data from custom tables
+        console.log('Deleting user data for user ID:', userId);
+        
+        // Delete attendance records
+        const { error: attendanceError } = await supabase
+            .from('attendance')
+            .delete()
+            .eq('user_id', userId);
+            
+        if (attendanceError) {
+            console.error('Error deleting attendance records:', attendanceError);
+        }
+        
+        // Delete subjects
+        const { error: subjectsError } = await supabase
+            .from('subjects')
+            .delete()
+            .eq('user_id', userId);
+            
+        if (subjectsError) {
+            console.error('Error deleting subjects:', subjectsError);
+        }
+        
+        // Delete user data entries
+        const { error: userDataError } = await supabase
+            .from('user_data')
+            .delete()
+            .eq('user_id', userId);
+            
+        if (userDataError) {
+            console.error('Error deleting user data:', userDataError);
+        }
+        
+        // 2. For actual account deletion, you would need to use Supabase Admin API
+        // This requires server-side implementation with admin API key
+        // For client-side, we'll return instructions
+        
+        return { 
+            success: true, 
+            message: 'User data deleted. Account deletion requires admin access.',
+            note: 'To fully delete your account, please contact support with your user ID: ' + userId
+        };
+        
+    } catch (error) {
+        console.error('Error requesting account deletion:', error);
+        return { 
+            success: false, 
+            message: 'Failed to delete user data. Please try again later.',
+            error: error.message
+        };
     }
 }
 

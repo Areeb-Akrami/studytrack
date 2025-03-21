@@ -276,33 +276,18 @@
             
             // Add each subject
             subjects.forEach(subject => {
-                const attendancePercentage = calculateAttendancePercentage(subject);
-                
                 const subjectElement = document.createElement('div');
                 subjectElement.className = 'subject-card';
-                
-                // Set color class based on attendance percentage
-                let statusClass = 'good';
-                if (attendancePercentage < 75) statusClass = 'warning';
-                if (attendancePercentage < 60) statusClass = 'danger';
                 
                 subjectElement.innerHTML = `
                     <div class="subject-header">
                         <h3 class="subject-name">${subject.name}</h3>
                         <span class="subject-code">${subject.code}</span>
                     </div>
-                    <div class="subject-attendance ${statusClass}">
-                        <div class="attendance-percentage">${attendancePercentage}%</div>
-                        <div class="attendance-label">Attendance</div>
-                    </div>
                     <div class="subject-stats">
                         <div class="stat">
-                            <span class="stat-value">${subject.classes_attended || 0}</span>
-                            <span class="stat-label">Attended</span>
-                        </div>
-                        <div class="stat">
                             <span class="stat-value">${subject.total_classes || 0}</span>
-                            <span class="stat-label">Total</span>
+                            <span class="stat-label">Total Classes</span>
                         </div>
                     </div>
                     <div class="subject-actions">
@@ -474,16 +459,6 @@
                 console.error('Error deleting subject:', error);
                 showMessage('Failed to delete subject. Please try again.', 'error');
             }
-        }
-
-        // Calculate attendance percentage for a subject
-        function calculateAttendancePercentage(subject) {
-            if (!subject.total_classes || subject.total_classes === 0) return 0;
-            
-            const attended = subject.classes_attended || 0;
-            const total = subject.total_classes;
-            
-            return Math.round((attended / total) * 100);
         }
 
         // Close all modals

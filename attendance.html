@@ -85,6 +85,36 @@
             }
         }
         
+        // Setup event listeners function
+        function setupEventListeners() {
+            // Set up logout handler
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+            
+            // Set up date picker change handler
+            const datePicker = document.getElementById('datePicker');
+            if (datePicker) {
+                datePicker.addEventListener('change', function() {
+                    loadSubjects();
+                });
+                
+                // Set default date to today if not already set
+                if (!datePicker.value) {
+                    const today = new Date();
+                    const formattedDate = today.toISOString().split('T')[0];
+                    datePicker.value = formattedDate;
+                }
+            }
+            
+            // Mobile menu toggle
+            const menuToggle = document.querySelector('.menu-toggle');
+            if (menuToggle) {
+                menuToggle.addEventListener('click', toggleMenu);
+            }
+        }
+
         // Function to load subjects
         async function loadSubjects() {
             const container = document.getElementById('attendance-container');

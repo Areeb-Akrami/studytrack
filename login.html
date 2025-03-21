@@ -6,6 +6,21 @@
     <title>Login - StudentTracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Check if Supabase loaded correctly
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!window.supabase) {
+                console.error('Supabase library failed to load');
+                document.getElementById('login-form').style.display = 'none';
+                setTimeout(() => {
+                    const messageContainer = document.getElementById('message-container');
+                    if (messageContainer) {
+                        messageContainer.innerHTML = '<div class="error-message">Authentication service unavailable. Please refresh the page or try again later.</div>';
+                    }
+                }, 500);
+            }
+        });
+    </script>
     <style>
         * {
             margin: 0;
@@ -236,11 +251,22 @@
             const loginForm = document.getElementById('login-form');
             const loginButton = document.getElementById('login-button');
             
-            // Check if user is already logged in
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                window.location.href = 'index.html';
+            // Ensure Supabase is available
+            if (!window.supabase) {
+                showMessage('Authentication service is not available. Please refresh the page.', 'error');
                 return;
+            }
+            
+            // Check if user is already logged in
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking authentication status:', error);
+                showMessage('Failed to check authentication status. Please refresh the page.', 'error');
             }
             
             // Check for logged out parameter
@@ -262,16 +288,22 @@
                 loginButton.innerHTML = '<span class="loading-spinner"></span> Logging in...';
                 clearMessages();
                 
+                console.log('Attempting to sign in with email:', email);
+                
                 try {
-                    // Attempt to sign in
+                    // Attempt to sign in directly with Supabase client
+                    console.log('Using Supabase client at URL:', supabaseUrl);
                     const { data, error } = await supabase.auth.signInWithPassword({
                         email: email,
                         password: password
                     });
                     
+                    console.log('Sign in response:', data ? 'success' : 'failed', error ? error : '');
+                    
                     if (error) throw error;
                     
                     // Login successful
+                    console.log('Login successful, user:', data.user);
                     showMessage('Login successful! Redirecting...', 'success');
                     
                     // Store user data
@@ -287,7 +319,7 @@
                     }, 1000);
                     
                 } catch (error) {
-                    console.error('Login error:', error);
+                    console.error('Login error details:', error);
                     showMessage(error.message || 'Failed to login. Please check your credentials.', 'error');
                     loginButton.disabled = false;
                     loginButton.textContent = 'Log In';

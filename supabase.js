@@ -1,7 +1,25 @@
-// Initialize Supabase client
+// Initialize Supabase client with explicit import from CDN
 const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// Check if supabase is available from window
+const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+
+// Display error if supabase client couldn't be initialized
+if (!supabase) {
+    console.error('Supabase client initialization failed. Please check if the Supabase JS library is loaded properly.');
+    // Try to add a visible error on the page if we're on a page with a message container
+    setTimeout(() => {
+        const messageContainer = document.getElementById('message-container');
+        if (messageContainer) {
+            messageContainer.innerHTML = '<div class="error-message">Failed to initialize authentication. Please refresh the page or try again later.</div>';
+        }
+    }, 1000);
+}
+
+// Log initialization for debugging
+console.log('Supabase client initialized with URL:', supabaseUrl);
+console.log('Supabase client object available:', supabase ? 'Yes' : 'No');
 
 // Helper functions for Supabase authentication and data operations
 

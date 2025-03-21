@@ -3,95 +3,64 @@ const supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Check if user is logged in
+// Helper functions for Supabase authentication and data operations
+
 async function checkUser() {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
-  } catch (error) {
-    console.error('Error checking user:', error);
-    return null;
-  }
-}
-
-// Get current session
-async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
-}
-
-// Sign up with auto-confirmation
-async function signUp(email, password, name) {
-  // First create the user
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        name
-      }
-    }
-  });
-  
-  if (error) throw error;
-  
-  // For development only: Auto-confirm the user
-  if (data.user && !data.user.email_confirmed_at) {
     try {
-      // This requires admin privileges and won't work with anon key
-      // You'd need to implement this on a server with service_role key
-      console.log("Email verification required. Please check your email.");
-    } catch (confirmError) {
-      console.error("Could not auto-confirm email:", confirmError);
+        const { data: { user } } = await supabase.auth.getUser();
+        return user;
+    } catch (error) {
+        console.error('Error checking user:', error);
+        return null;
     }
-  }
-  
-  return data;
 }
 
-// Sign in
+async function getSession() {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session;
+    } catch (error) {
+        console.error('Error getting session:', error);
+        return null;
+    }
+}
+
+async function signUp(email, password) {
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error signing up:', error);
+        throw error;
+    }
+}
+
 async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-  
-  if (error) throw error;
-  
-  // Record login
-  await recordLogin(data.user.id);
-  
-  return data;
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error signing in:', error);
+        throw error;
+    }
 }
 
-// Sign out
 async function signOut() {
-  try {
-    // First sign out from Supabase
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    
-    // Clear all local storage data
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('sb-iijzdoimduaulxtyfmwz-auth-token');
-    
-    // Clear session storage
-    sessionStorage.clear();
-    
-    console.log('Successfully signed out');
-    return { success: true };
-  } catch (error) {
-    console.error('Error signing out:', error);
-    
-    // Force clear local data even if there was an error with Supabase
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('sb-iijzdoimduaulxtyfmwz-auth-token');
-    sessionStorage.clear();
-    
-    throw error;
-  }
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+    } catch (error) {
+        console.error('Error signing out:', error);
+        throw error;
+    }
 }
 
 // Record login

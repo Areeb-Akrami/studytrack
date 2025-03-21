@@ -6,6 +6,56 @@
     <title>Manage Subjects - StudyTrack</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        window.addEventListener('load', function() {
+            window.supabaseUrl = 'https://iijzdoimduaulxtyfmwz.supabase.co';
+            window.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpanpkb2ltZHVhdWx4dHlmbXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0OTc5NTEsImV4cCI6MjA1ODA3Mzk1MX0.DQtCE2CZCIVw0wVCaaJs7G3XufVsASyZYaefgHv7pX0';
+            window.supabase = supabase.createClient(window.supabaseUrl, window.supabaseKey);
+            initializePage();
+        });
+
+        async function initializePage() {
+            try {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Load subjects first
+                await loadSubjects();
+                
+                // Set up event listeners
+                const addSubjectForm = document.getElementById('add-subject-form');
+                if (addSubjectForm) {
+                    console.log('Setting up form submission listener');
+                    addSubjectForm.addEventListener('submit', function(event) {
+                        event.preventDefault();
+                        addSubject(event);
+                    });
+                } else {
+                    console.error('Form with ID "add-subject-form" not found');
+                }
+                
+                // Logout button listener
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', handleLogout);
+                }
+                
+                // Mobile menu toggle
+                const menuToggle = document.querySelector('.menu-toggle');
+                if (menuToggle) {
+                    menuToggle.addEventListener('click', function() {
+                        document.querySelector('.nav-links').classList.toggle('active');
+                    });
+                }
+            } catch (error) {
+                console.error('Error initializing page:', error);
+            }
+        }
+    </script>
     <style>
         :root {
             --primary: #7C4DFF;
@@ -478,7 +528,6 @@
         <div class="nav-links">
             <a href="index.html">Dashboard</a>
             <a href="subjects.html" class="active">Subjects</a>
-            <a href="study-planner.html">Study Planner</a>
             <a href="attendance.html">Attendance</a>
             <a href="#" id="logout-btn">Logout</a>
         </div>
@@ -491,7 +540,7 @@
         <div class="card">
             <div class="add-subject-form">
                 <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Add New Subject</h2>
-                <form id="subject-form" onsubmit="return false;">
+                <form id="add-subject-form">
                     <div class="form-group">
                         <label for="subject-name">Subject Name</label>
                         <input type="text" id="subject-name" required placeholder="Enter subject name">
@@ -508,7 +557,7 @@
                         <label for="subject-description">Description (Optional)</label>
                         <textarea id="subject-description" rows="3" placeholder="Enter subject description"></textarea>
                     </div>
-                    <button type="submit" class="btn" onclick="addSubject()">
+                    <button type="submit" id="add-subject-btn" class="btn">
                         <i class="fas fa-plus"></i> Add Subject
                     </button>
                 </form>
@@ -557,49 +606,25 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="supabase.js"></script>
     <script>
         let currentUser;
         let subjects = [];
         let currentEditingSubject = null;
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                // Check if user is logged in
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                currentUser = {
-                    id: user.id,
-                    email: user.email,
-                    name: user.user_metadata?.name || user.email.split('@')[0]
-                };
-
-                // Set up logout handler
-                document.getElementById('logout-btn').addEventListener('click', handleLogout);
-
-                // Load subjects
-                await loadSubjects();
-            } catch (error) {
-                console.error('Error initializing page:', error);
-                showMessage('Error loading subjects. Please refresh the page.', 'error');
-            }
-        });
-
         async function loadSubjects() {
             try {
-                const { data, error } = await supabase
+                const { data: { user } } = await window.supabase.auth.getUser();
+                if (!user) return;
+
+                const { data: subjectsData, error } = await window.supabase
                     .from('subjects')
                     .select('*')
-                    .eq('user_id', currentUser.id);
+                    .eq('user_id', user.id);
 
                 if (error) throw error;
 
-                subjects = data || [];
+                subjects = subjectsData || [];
+                console.log('Loaded subjects:', subjects); // Debug log
                 displaySubjects();
             } catch (error) {
                 console.error('Error loading subjects:', error);
@@ -624,20 +649,26 @@
             }
 
             subjects.forEach(subject => {
+                // Use proper field names, checking for both old and new formats
+                const name = subject.name || subject.subject_name || 'Unnamed Subject';
+                const code = subject.code || subject.subject_code || 'No Code';
+                const description = subject.description || 'No description provided';
+                const totalClasses = subject.total_classes || 0;
+
                 const card = document.createElement('div');
                 card.className = 'subject-card';
                 card.innerHTML = `
                     <div class="subject-header">
-                        <div class="subject-name">${subject.name}</div>
-                        <div class="subject-code">${subject.code}</div>
+                        <div class="subject-name">${name}</div>
+                        <div class="subject-code">${code}</div>
                     </div>
                     
                     <div class="subject-description">
-                        ${subject.description || 'No description provided'}
+                        ${description}
                     </div>
 
                     <div style="color: #888; margin-top: 10px;">
-                        <i class="fas fa-calendar-alt"></i> Total Classes: ${subject.total_classes}
+                        <i class="fas fa-calendar-alt"></i> Total Classes: ${totalClasses}
                     </div>
 
                     <div class="subject-actions">
@@ -654,106 +685,69 @@
             });
         }
 
-        async function addSubject() {
-            const nameInput = document.getElementById('subject-name');
-            const codeInput = document.getElementById('subject-code');
-            const totalClassesInput = document.getElementById('total-classes');
-            const descriptionInput = document.getElementById('subject-description');
+        async function addSubject(e) {
+            if (e) e.preventDefault();
+            
+            const button = document.querySelector('#add-subject-btn');
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            button.disabled = true;
 
             try {
-                // Clear any existing error messages
-                const messageContainer = document.getElementById('message-container');
-                messageContainer.innerHTML = '';
-
-                // Validate inputs
-                if (!nameInput.value.trim()) {
-                    throw new Error('Subject name is required');
-                }
-
-                if (!codeInput.value.trim()) {
-                    throw new Error('Subject code is required');
-                }
-
-                const totalClasses = parseInt(totalClassesInput.value);
-                if (isNaN(totalClasses) || totalClasses <= 0) {
-                    throw new Error('Please enter a valid number of total classes (greater than 0)');
-                }
+                const subjectCode = document.getElementById('subject-code').value.trim();
+                const subjectName = document.getElementById('subject-name').value.trim();
+                const totalClasses = parseInt(document.getElementById('total-classes').value);
+                const description = document.getElementById('subject-description').value.trim();
 
                 // Check if user is authenticated
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { user } } = await window.supabase.auth.getUser();
                 if (!user) {
                     throw new Error('You must be logged in to add subjects');
                 }
 
-                // Create the subject object
-                const subject = {
-                    name: nameInput.value.trim(),
-                    code: codeInput.value.trim().toUpperCase(), // Standardize code format
-                    total_classes: totalClasses,
-                    description: descriptionInput.value.trim(),
-                    user_id: user.id
-                };
-
                 // First check if a subject with this code already exists
-                const { data: existingSubject, error: checkError } = await supabase
+                const { data: existingSubject, error: checkError } = await window.supabase
                     .from('subjects')
                     .select('id')
+                    .eq('code', subjectCode)
                     .eq('user_id', user.id)
-                    .eq('code', subject.code)
-                    .maybeSingle();
+                    .single();
 
-                if (checkError) {
-                    console.error('Error checking existing subject:', checkError);
+                if (checkError && checkError.code !== 'PGRST116') {
                     throw checkError;
                 }
 
                 if (existingSubject) {
-                    throw new Error(`A subject with code ${subject.code} already exists`);
+                    throw new Error('A subject with this code already exists');
                 }
 
                 // Insert the new subject
-                const { data, error } = await supabase
+                const subject = {
+                    user_id: user.id,
+                    code: subjectCode,
+                    name: subjectName,
+                    total_classes: totalClasses,
+                    description: description,
+                    created_at: new Date()
+                };
+
+                console.log('Adding subject:', subject); // Debug log
+
+                const { data, error } = await window.supabase
                     .from('subjects')
-                    .insert([subject])
-                    .select()
-                    .single();
+                    .insert([subject]);
 
-                if (error) {
-                    throw error;
-                }
+                if (error) throw error;
 
-                if (!data) {
-                    throw new Error('No data returned from the database');
-                }
-
-                // Update local subjects array
-                subjects.push(data);
-                displaySubjects();
+                // Clear form and refresh subjects list
+                document.getElementById('add-subject-form').reset();
+                await loadSubjects();
                 showMessage('Subject added successfully!', 'success');
-
-                // Clear form
-                nameInput.value = '';
-                codeInput.value = '';
-                totalClassesInput.value = '';
-                descriptionInput.value = '';
-
             } catch (error) {
                 console.error('Error adding subject:', error);
-                
-                // Handle specific error cases
-                if (error.code === '23505') {
-                    showMessage('A subject with this code already exists', 'error');
-                } else if (error.code === '23514') {
-                    showMessage('Please ensure total classes is greater than 0', 'error');
-                } else if (error.code === '42501') {
-                    showMessage('You do not have permission to add subjects', 'error');
-                } else if (error.message?.includes('JWT')) {
-                    showMessage('Your session has expired. Please log in again.', 'error');
-                    setTimeout(() => window.location.href = 'login.html', 2000);
-                } else {
-                    const errorInfo = handleDatabaseError(error, 'adding subject');
-                    showMessage(errorInfo.message || error.message || 'Failed to add subject', 'error');
-                }
+                showMessage(error.message || 'Failed to add subject. Please try again.', 'error');
+            } finally {
+                button.innerHTML = '<i class="fas fa-plus"></i> Add Subject';
+                button.disabled = false;
             }
         }
 
@@ -786,7 +780,7 @@
             };
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await window.supabase
                     .from('subjects')
                     .update(updates)
                     .eq('id', currentEditingSubject.id)
@@ -816,7 +810,7 @@
 
             try {
                 // First delete all attendance records for this subject
-                const { error: attendanceError } = await supabase
+                const { error: attendanceError } = await window.supabase
                     .from('attendance')
                     .delete()
                     .eq('subject_id', subjectId);
@@ -824,7 +818,7 @@
                 if (attendanceError) throw attendanceError;
 
                 // Then delete the subject
-                const { error: subjectError } = await supabase
+                const { error: subjectError } = await window.supabase
                     .from('subjects')
                     .delete()
                     .eq('id', subjectId);
@@ -849,7 +843,7 @@
                 button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
                 button.disabled = true;
                 
-                await supabase.auth.signOut();
+                await window.supabase.auth.signOut();
                 window.location.href = 'login.html';
             } catch (error) {
                 console.error('Error during logout:', error);
@@ -908,6 +902,56 @@
                 document.querySelector('.nav-links').classList.remove('active');
             }
         });
+
+        // Add the missing handleDatabaseError function
+        function handleDatabaseError(error, action) {
+            console.error(`Database error while ${action}:`, error);
+            
+            // Check if it's a Supabase error
+            if (error.code) {
+                switch (error.code) {
+                    case '23505': // Unique violation
+                        return {
+                            message: 'A subject with this code already exists.',
+                            type: 'error'
+                        };
+                    case '23503': // Foreign key violation
+                        return {
+                            message: 'Unable to complete action because it references other data.',
+                            type: 'error'
+                        };
+                    case '42P01': // Undefined table
+                        return {
+                            message: 'Database error: Table not found. Please contact support.',
+                            type: 'error'
+                        };
+                    case 'PGRST116': // Not found
+                        return {
+                            message: 'The requested item was not found.',
+                            type: 'warning'
+                        };
+                    default:
+                        return {
+                            message: `Database error: ${error.message || 'Unknown error occurred'}`,
+                            type: 'error'
+                        };
+                }
+            }
+            
+            // Handle network or other errors
+            if (error.message.includes('Failed to fetch')) {
+                return {
+                    message: 'Unable to connect to the database. Please check your internet connection.',
+                    type: 'error'
+                };
+            }
+            
+            // Default error
+            return {
+                message: error.message || `Error ${action}. Please try again.`,
+                type: 'error'
+            };
+        }
     </script>
 </body>
 </html>

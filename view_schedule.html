@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Schedule</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #1f1b4d;
+            color: white;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            opacity: 1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .schedule-tabs {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: #6c63ff;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-button.active:hover {
+            background: #5b52ff;
+        }
+
+        .schedule-content {
+            background: rgba(20, 20, 50, 0.5);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+        }
+
+        .day-container {
+            margin-bottom: 30px;
+        }
+
+        .day-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .class-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .class-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .class-time {
+            font-weight: 500;
+            color: #6c63ff;
+        }
+
+        .class-subject {
+            font-weight: 500;
+        }
+
+        .class-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .class-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .class-actions .edit {
+            background: #6c63ff;
+            color: white;
+        }
+
+        .class-actions .delete {
+            background: #ff3b30;
+            color: white;
+        }
+
+        .class-actions button:hover {
+            transform: translateY(-2px);
+        }
+
+        .add-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .add-button:hover {
+            background: #5b52ff;
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #4834d4;
+            border-radius: 20px;
+            width: 500px;
+            max-width: 90%;
+            padding: 30px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: white;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        select, input[type="time"] {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #6c63ff;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5b52ff;
+        }
+
+        /* Custom dropdown styling */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-selected {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .select-selected:after {
+            position: absolute;
+            content: "";
+            top: 50%;
+            right: 15px;
+            width: 10px;
+            height: 10px;
+            border-bottom: 2px solid white;
+            border-right: 2px solid white;
+            transform: translateY(-50%) rotate(45deg);
+        }
+
+        .select-items {
+            position: absolute;
+            background-color: #2d1faf;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 99;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .select-items div {
+            color: white;
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .select-items div:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .select-hide {
+            display: none;
+        }
+
+        .same-as-selected {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">StudentTracker</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="manage_subjects.html">Subjects</a>
+            <a href="mark_attendance.html">Attendance</a>
+            <a href="view_schedule.html" class="active">Schedule</a>
+            <a href="#" id="logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Your Schedule</h1>
+
+        <div id="add-schedule-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add Schedule</h2>
+                <form id="add-schedule-form">
+                    <div class="form-group">
+                        <label for="schedule-type">Type</label>
+                        <div class="custom-select">
+                            <div class="select-selected">Class</div>
+                            <div class="select-items select-hide">
+                                <div data-value="class">Class</div>
+                                <div data-value="study">Study</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="schedule-type" value="class">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="schedule-subject">Subject</label>
+                        <div class="custom-select">
+                            <div class="select-selected">Select Subject</div>
+                            <div class="select-items select-hide" id="subject-items">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <input type="hidden" id="schedule-subject" value="">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="schedule-day">Day</label>
+                        <div class="custom-select">
+                            <div class="select-selected">Monday</div>
+                            <div class="select-items select-hide">
+                                <div data-value="monday">Monday</div>
+                                <div data-value="tuesday">Tuesday</div>
+                                <div data-value="wednesday">Wednesday</div>
+                                <div data-value="thursday">Thursday</div>
+                                <div data-value="friday">Friday</div>
+                                <div data-value="saturday">Saturday</div>
+                                <div data-value="sunday">Sunday</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="schedule-day" value="monday">
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="start-time">Start Time</label>
+                            <input type="time" id="start-time" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="end-time">End Time</label>
+                            <input type="time" id="end-time" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="add-to-schedule-btn">Add to Schedule</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="schedule-tabs">
+            <button class="tab-button active" data-tab="class">Class Schedule</button>
+            <button class="tab-button" data-tab="study">Study Schedule</button>
+        </div>
+
+        <div class="schedule-content">
+            <div id="class-schedule" class="schedule-tab active">
+                <!-- Class schedule will be displayed here -->
+            </div>
+            
+            <div id="study-schedule" class="schedule-tab" style="display: none;">
+                <!-- Study schedule will be displayed here -->
+            </div>
+            
+            <button id="add-schedule-btn" class="add-button">Add New Schedule Item</button>
+        </div>
+    </div>
+
+    <script>
+        // Get current user from localStorage
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+
+        // Load data from localStorage
+        let subjects = JSON.parse(localStorage.getItem('subjects_' + currentUser.id)) || [];
+        let classSchedule = JSON.parse(localStorage.getItem('class_schedule_' + currentUser.id)) || {};
+        let studySchedule = JSON.parse(localStorage.getItem('study_schedule_' + currentUser.id)) || {};
+
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                
+                document.querySelectorAll('.schedule-tab').forEach(tab => tab.style.display = 'none');
+                document.getElementById(button.dataset.tab + '-schedule').style.display = 'block';
+            });
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('add-schedule-modal');
+        const btn = document.getElementById('add-schedule-btn');
+        const span = document.getElementsByClassName('close')[0];
+
+        btn.onclick = function() {
+            modal.style.display = 'flex';
+        }
+
+        span.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Custom dropdown functionality
+        function setupCustomDropdowns() {
+            const customSelects = document.querySelectorAll('.custom-select');
+            
+            customSelects.forEach(select => {
+                const selectedDiv = select.querySelector('.select-selected');
+                const itemsDiv = select.querySelector('.select-items');
+                const hiddenInput = select.parentNode.querySelector('input[type="hidden"]');
+                
+                // Click on selected element
+                selectedDiv.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeAllSelect(this);
+                    itemsDiv.classList.toggle('select-hide');
+                    this.classList.toggle('select-arrow-active');
+                });
+                
+                // Click on an option
+                if (itemsDiv) {
+                    const items = itemsDiv.querySelectorAll('div');
+                    items.forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            selectedDiv.textContent = this.textContent;
+                            hiddenInput.value = this.getAttribute('data-value') || this.textContent;
+                            itemsDiv.classList.add('select-hide');
+                        });
+                    });
+                }
+            });
+            
+            // Close dropdowns when clicking elsewhere
+            document.addEventListener('click', closeAllSelect);
+        }
+        
+        function closeAllSelect(elmnt) {
+            const items = document.querySelectorAll('.select-items');
+            const selected = document.querySelectorAll('.select-selected');
+            
+            for (let i = 0; i < selected.length; i++) {
+                if (elmnt != selected[i]) {
+                    selected[i].classList.remove('select-arrow-active');
+                }
+            }
+            
+            for (let i = 0; i < items.length; i++) {
+                if (elmnt != items[i] && elmnt != selected[i]) {
+                    items[i].classList.add('select-hide');
+                }
+            }
+        }
+
+        // Populate subject dropdown
+        function populateSubjects() {
+            const subjectItems = document.getElementById('subject-items');
+            subjectItems.innerHTML = '';
+            
+            subjects.forEach(subject => {
+                const item = document.createElement('div');
+                item.textContent = subject.name;
+                item.setAttribute('data-value', subject.name);
+                subjectItems.appendChild(item);
+            });
+        }
+
+        // Display schedules
+        function displaySchedules() {
+            displaySchedule('class', classSchedule);
+            displaySchedule('study', studySchedule);
+        }
+
+        function displaySchedule(type, schedule) {
+            const container = document.getElementById(`${type}-schedule`);
+            container.innerHTML = '';
+            
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            let hasItems = false;
+            
+            days.forEach(day => {
+                if (schedule[day] && schedule[day].length > 0) {
+                    hasItems = true;
+                    
+                    const dayContainer = document.createElement('div');
+                    dayContainer.className = 'day-container';
+                    
+                    const dayTitle = document.createElement('h2');
+                    dayTitle.className = 'day-title';
+                    dayTitle.textContent = day.charAt(0).toUpperCase() + day.slice(1);
+                    
+                    dayContainer.appendChild(dayTitle);
+                    
+                    // Sort items by start time
+                    schedule[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
+                    
+                    schedule[day].forEach(item => {
+                        const classItem = document.createElement('div');
+                        classItem.className = 'class-item';
+                        
+                        const timeFormatted = formatTime(item.startTime) + ' - ' + formatTime(item.endTime);
+                        
+                        classItem.innerHTML = `
+                            <div class="class-time">${timeFormatted}</div>
+                            <div class="class-subject">${item.subject}</div>
+                            <div class="class-actions">
+                                <button class="edit" onclick="editScheduleItem('${type}', '${day}', '${item.id}')">Edit</button>
+                                <button class="delete" onclick="deleteScheduleItem('${type}', '${day}', '${item.id}')">Delete</button>
+                            </div>
+                        `;
+                        
+                        dayContainer.appendChild(classItem);
+                    });
+                    
+                    container.appendChild(dayContainer);
+                }
+            });
+            
+            // Show empty state if no items
+            if (!hasItems) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <p>No ${type} schedule items yet.</p>
+                    <p>Click "Add New Schedule Item" to get started.</p>
+                `;
+                container.appendChild(emptyState);
+            }
+        }
+
+        // Add schedule item
+        document.getElementById('add-schedule-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const type = document.getElementById('schedule-type').value;
+            const subject = document.getElementById('schedule-subject').value;
+            const day = document.getElementById('schedule-day').value;
+            const startTime = document.getElementById('start-time').value;
+            const endTime = document.getElementById('end-time').value;
+            
+            if (!subject || !startTime || !endTime) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (startTime >= endTime) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            // Create schedule item
+            const item = {
+                id: Date.now().toString(),
+                subject,
+                startTime,
+                endTime
+            };
+            
+            // Add to schedule
+            const schedule = type === 'class' ? classSchedule : studySchedule;
+            
+            if (!schedule[day]) {
+                schedule[day] = [];
+            }
+            
+            schedule[day].push(item);
+            
+            // Save to localStorage
+            saveSchedules();
+            
+            // Update display
+            displaySchedules();
+            
+            // Close modal
+            modal.style.display = 'none';
+            
+            // Reset form
+            this.reset();
+            document.querySelector('.form-group:first-child .select-selected').textContent = 'Class';
+            document.querySelector('.form-group:nth-child(2) .select-selected').textContent = 'Select Subject';
+            document.querySelector('.form-group:nth-child(3) .select-selected').textContent = 'Monday';
+            document.getElementById('schedule-type').value = 'class';
+            document.getElementById('schedule-subject').value = '';
+            document.getElementById('schedule-day').value = 'monday';
+        });
+
+        function formatTime(time) {
+            // Convert 24h format to 12h format
+            const [hours, minutes] = time.split(':');
+            const h = parseInt(hours);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hour12 = h % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function editScheduleItem(type, day, id) {
+            const schedule = type === 'class' ? classSchedule : studySchedule;
+            const item = schedule[day].find(item => item.id === id);
+            
+            if (item) {
+                // Update the custom dropdowns
+                document.querySelector('.form-group:first-child .select-selected').textContent = 
+                    type.charAt(0).toUpperCase() + type.slice(1);
+                document.querySelector('.form-group:nth-child(2) .select-selected').textContent = item.subject;
+                document.querySelector('.form-group:nth-child(3) .select-selected').textContent = 
+                    day.charAt(0).toUpperCase() + day.slice(1);
+                
+                // Update hidden inputs
+                document.getElementById('schedule-type').value = type;
+                document.getElementById('schedule-subject').value = item.subject;
+                document.getElementById('schedule-day').value = day;
+                document.getElementById('start-time').value = item.startTime;
+                document.getElementById('end-time').value = item.endTime;
+                
+                // Remove item for editing
+                deleteScheduleItem(type, day, id, false);
+                
+                // Show modal
+                modal.style.display = 'flex';
+            }
+        }
+
+        function deleteScheduleItem(type, day, id, shouldConfirm = true) {
+            if (shouldConfirm && !confirm('Are you sure you want to delete this item?')) {
+                return;
+            }
+            
+            const schedule = type === 'class' ? classSchedule : studySchedule;
+            
+            if (schedule[day]) {
+                schedule[day] = schedule[day].filter(item => item.id !== id);
+                
+                // Remove day if empty
+                if (schedule[day].length === 0) {
+                    delete schedule[day];
+                }
+                
+                // Save and update
+                saveSchedules();
+                displaySchedules();
+            }
+        }
+
+        function saveSchedules() {
+            localStorage.setItem('class_schedule_' + currentUser.id, JSON.stringify(classSchedule));
+            localStorage.setItem('study_schedule_' + currentUser.id, JSON.stringify(studySchedule));
+        }
+
+        // Logout
+        document.getElementById('logout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        });
+
+        // Initialize
+        populateSubjects();
+        setupCustomDropdowns();
+        displaySchedules();
+    </script>
+</body>
+</html> 

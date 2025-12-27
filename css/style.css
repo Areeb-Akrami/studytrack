@@ -1,0 +1,47 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* Add more shared styles as needed */
+
+.study-planner {
+    margin-top: 30px;
+}
+
+.study-planner h2 {
+    color: #6a11cb;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+}
+
+.time-slot {
+    background: #e9ecef;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 5px 0;
+}
+
+.slot {
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-top: 3px;
+}
+
+.day-slot {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 10px 0;
+} 
